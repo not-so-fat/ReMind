@@ -172,13 +172,27 @@ print_info "Installing dependencies (this may take a while)..."
 pnpm install
 
 # Set up environment variables
+# Prisma reads from .env, Next.js reads from .env.local
+DB_URL='DATABASE_URL="file:./prisma/dev.db"'
+
+if [ ! -f ".env" ]; then
+    print_info "Creating .env file for Prisma..."
+    echo "$DB_URL" > .env
+    print_info ".env created"
+else
+    print_warn ".env already exists. Skipping creation."
+fi
+
 if [ ! -f ".env.local" ]; then
-    print_info "Creating .env.local file..."
-    echo 'DATABASE_URL="file:./prisma/dev.db"' > .env.local
+    print_info "Creating .env.local file for Next.js..."
+    echo "$DB_URL" > .env.local
     print_info ".env.local created"
 else
     print_warn ".env.local already exists. Skipping creation."
 fi
+
+# Export DATABASE_URL for Prisma commands (backup method)
+export DATABASE_URL="file:./prisma/dev.db"
 
 # Ensure prisma directory exists
 if [ ! -d "prisma" ]; then
