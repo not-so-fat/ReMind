@@ -71,6 +71,19 @@ else
     print_info "Node.js already installed: $NODE_VERSION"
 fi
 
+# Ensure node is in PATH (npm needs node to work)
+if ! command -v node &> /dev/null; then
+    if [ -x "/usr/bin/node" ]; then
+        print_info "Adding /usr/bin to PATH for node..."
+        export PATH="/usr/bin:$PATH"
+        hash -r 2>/dev/null || true
+    elif [ -x "/usr/local/bin/node" ]; then
+        print_info "Adding /usr/local/bin to PATH for node..."
+        export PATH="/usr/local/bin:$PATH"
+        hash -r 2>/dev/null || true
+    fi
+fi
+
 # Check for npm (refresh command cache in case npm was just installed)
 hash -r 2>/dev/null || true
 
@@ -81,22 +94,43 @@ if command -v npm &> /dev/null; then
 elif [ -x "/usr/bin/npm" ]; then
     NPM_CMD="/usr/bin/npm"
     print_info "npm found at /usr/bin/npm, using direct path"
+    # Ensure /usr/bin is in PATH
+    if [[ ":$PATH:" != *":/usr/bin:"* ]]; then
+        export PATH="/usr/bin:$PATH"
+        hash -r 2>/dev/null || true
+    fi
 elif [ -x "/usr/local/bin/npm" ]; then
     NPM_CMD="/usr/local/bin/npm"
     print_info "npm found at /usr/local/bin/npm, using direct path"
+    # Ensure /usr/local/bin is in PATH
+    if [[ ":$PATH:" != *":/usr/local/bin:"* ]]; then
+        export PATH="/usr/local/bin:$PATH"
+        hash -r 2>/dev/null || true
+    fi
 else
     print_error "npm not found even though Node.js is installed. This is unusual."
     print_error "Please check if npm is installed: ls -la /usr/bin/npm"
     exit 1
 fi
 
-# Verify npm works
-if ! $NPM_CMD --version &> /dev/null; then
-    print_error "npm found but doesn't work. Please check npm installation."
+# Test npm with verbose error output on failure
+NPM_VERSION=$($NPM_CMD --version 2>&1)
+NPM_EXIT_CODE=$?
+
+if [ $NPM_EXIT_CODE -ne 0 ]; then
+    print_error "npm found but doesn't work. Error output: $NPM_VERSION"
+    print_error "Checking dependencies..."
+    if command -v node &> /dev/null; then
+        print_info "node is available: $(node --version)"
+        print_error "npm may be corrupted or have permission issues."
+        print_error "Try: sudo apt install --reinstall nodejs"
+    else
+        print_error "node is not in PATH. Current PATH: $PATH"
+    fi
     exit 1
 fi
 
-print_info "npm available: $($NPM_CMD --version)"
+print_info "npm available: $NPM_VERSION"
 
 # Check for pnpm
 if ! command -v pnpm &> /dev/null; then
