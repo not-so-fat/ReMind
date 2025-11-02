@@ -47,7 +47,13 @@ Quick setup:
 4. Run: `pnpm install && pnpm db:generate && pnpm db:migrate`
 5. Start: `pnpm dev`
 
-The app will be available at http://localhost:3000
+The app will be available at:
+- **Local access**: http://localhost:3000
+- **Network access**: http://YOUR_IP_ADDRESS:3000 (accessible from other computers on your network)
+
+To find your IP address:
+- **macOS/Linux**: `ip addr show` or `ifconfig` (look for inet address)
+- **Windows**: `ipconfig` (look for IPv4 Address)
 
 ## Testing
 

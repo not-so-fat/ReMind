@@ -132,8 +132,9 @@ If you prefer to set up manually or need more control, follow the steps below.
    ```
 
 7. **Open the application**
-   - Open your browser and go to: `http://localhost:3000`
-   - If running on a remote server, you may need to access it via the server's IP address or configure port forwarding
+   - **Local access**: Open your browser and go to `http://localhost:3000`
+   - **Network access**: The app is configured to accept connections from other computers on your network. Access it at `http://YOUR_IP_ADDRESS:3000`
+   - To find your IP address: `ip addr show` or `hostname -I`
 
 ## First Time Usage
 

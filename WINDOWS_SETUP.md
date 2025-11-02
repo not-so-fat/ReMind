@@ -64,7 +64,9 @@
    ```
 
 7. **Open the application**
-   - Open your browser and go to: `http://localhost:3000`
+   - **Local access**: Open your browser and go to `http://localhost:3000`
+   - **Network access**: The app is configured to accept connections from other computers on your network. Access it at `http://YOUR_IP_ADDRESS:3000`
+   - To find your IP address: Open Command Prompt and run `ipconfig` (look for IPv4 Address)
 
 ## First Time Usage
 
