@@ -9,7 +9,8 @@ It's simple, playful, and customizable.
 
 To set up and run ReMind, see:
 - **Windows users**: See `WINDOWS_SETUP.md` for detailed instructions
-- **macOS/Linux users**: See `webapp/README.md` for setup instructions
+- **Ubuntu/Linux users**: See `UBUNTU_SETUP.md` for detailed instructions
+- **macOS users**: See `webapp/README.md` for setup instructions
 
 ## What You Can Do?
 

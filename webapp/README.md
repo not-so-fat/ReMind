@@ -2,7 +2,7 @@
 
 ## Setup
 
-### macOS/Linux
+### macOS
 
 1. Install dependencies:
 ```bash
@@ -35,6 +35,17 @@ Quick setup:
 2. Create `.env.local` with: `DATABASE_URL="file:./prisma/dev.db"`
 3. Run: `pnpm install && pnpm db:generate && pnpm db:migrate`
 4. Start: `pnpm dev`
+
+### Ubuntu/Linux
+
+See `UBUNTU_SETUP.md` in the project root for detailed Ubuntu/Linux setup instructions.
+
+Quick setup:
+1. Install Node.js (20+) using NodeSource repository or nvm
+2. Install pnpm: `npm install -g pnpm`
+3. Create `.env.local` with: `DATABASE_URL="file:./prisma/dev.db"`
+4. Run: `pnpm install && pnpm db:generate && pnpm db:migrate`
+5. Start: `pnpm dev`
 
 The app will be available at http://localhost:3000
 
