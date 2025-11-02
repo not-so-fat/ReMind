@@ -74,26 +74,36 @@ fi
 # Check for npm (refresh command cache in case npm was just installed)
 hash -r 2>/dev/null || true
 
-if ! command -v npm &> /dev/null; then
-    # Try checking common locations
-    if [ -f "/usr/bin/npm" ] || [ -f "/usr/local/bin/npm" ]; then
-        print_info "npm found in standard location, refreshing PATH..."
-        export PATH="/usr/bin:/usr/local/bin:$PATH"
-        hash -r 2>/dev/null || true
-    fi
-    
-    # Check again
-    if ! command -v npm &> /dev/null; then
-        print_error "npm not found even though Node.js is installed. This is unusual."
-        print_error "Please check if npm is installed: which npm"
-        exit 1
-    fi
+# Find npm - check command first, then common locations
+NPM_CMD=""
+if command -v npm &> /dev/null; then
+    NPM_CMD="npm"
+elif [ -x "/usr/bin/npm" ]; then
+    NPM_CMD="/usr/bin/npm"
+    print_info "npm found at /usr/bin/npm, using direct path"
+elif [ -x "/usr/local/bin/npm" ]; then
+    NPM_CMD="/usr/local/bin/npm"
+    print_info "npm found at /usr/local/bin/npm, using direct path"
+else
+    print_error "npm not found even though Node.js is installed. This is unusual."
+    print_error "Please check if npm is installed: ls -la /usr/bin/npm"
+    exit 1
 fi
+
+# Verify npm works
+if ! $NPM_CMD --version &> /dev/null; then
+    print_error "npm found but doesn't work. Please check npm installation."
+    exit 1
+fi
+
+print_info "npm available: $($NPM_CMD --version)"
 
 # Check for pnpm
 if ! command -v pnpm &> /dev/null; then
     print_info "Installing pnpm..."
-    sudo npm install -g pnpm
+    sudo $NPM_CMD install -g pnpm
+    # Refresh hash after installing pnpm
+    hash -r 2>/dev/null || true
     print_info "pnpm installed: $(pnpm --version)"
 else
     print_info "pnpm already installed: $(pnpm --version)"
