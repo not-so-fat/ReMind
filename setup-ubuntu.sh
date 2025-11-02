@@ -71,10 +71,23 @@ else
     print_info "Node.js already installed: $NODE_VERSION"
 fi
 
-# Check for npm
+# Check for npm (refresh command cache in case npm was just installed)
+hash -r 2>/dev/null || true
+
 if ! command -v npm &> /dev/null; then
-    print_error "npm not found even though Node.js is installed. This is unusual."
-    exit 1
+    # Try checking common locations
+    if [ -f "/usr/bin/npm" ] || [ -f "/usr/local/bin/npm" ]; then
+        print_info "npm found in standard location, refreshing PATH..."
+        export PATH="/usr/bin:/usr/local/bin:$PATH"
+        hash -r 2>/dev/null || true
+    fi
+    
+    # Check again
+    if ! command -v npm &> /dev/null; then
+        print_error "npm not found even though Node.js is installed. This is unusual."
+        print_error "Please check if npm is installed: which npm"
+        exit 1
+    fi
 fi
 
 # Check for pnpm
