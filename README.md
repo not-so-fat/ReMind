@@ -5,6 +5,12 @@
 ReMind helps you remember things through repetitive quiz training.
 It's simple, playful, and customizable.
 
+## Getting Started
+
+To set up and run ReMind, see:
+- **Windows users**: See `WINDOWS_SETUP.md` for detailed instructions
+- **macOS/Linux users**: See `webapp/README.md` for setup instructions
+
 ## What You Can Do?
 
 ### What to Memorize

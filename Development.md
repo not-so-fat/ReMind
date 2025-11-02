@@ -18,9 +18,9 @@
     - The number of success
     - Success rate = (The number of success) / (The number of trials)
     - Status category: One of "New", "Wandering", "Confident"
-        - If the number of trials is less than N (by default N=3), it is new
+        - If the number of trials is less than N (by default N=5), it is new
         - If the number of trials is >= N,
-            - If success rate is under p (by default p = 0.5), it is "Wandering"
+            - If success rate is under the threshold (by default 0.8 = 80%), it is "Wandering"
             - Else, "Confident"
     - Active and cooldown (turn-based)
         - We don't want to show the same quiz in short period of time. Cooldown is measured in turns: once used, a quiz becomes inactive for C turns (default C=10). Each answered quiz increments a per-target turn counter.
@@ -32,7 +32,7 @@
             - Sometimes there are no active quiz in category, such case just pick category from the other categories. For example, if all the quiz is new, just pick new. If new and confident, pick new with 80%, confident with 20%.
         - Then pick the quiz from active quizs with uniform distribution
     - Initialize
-        - Pick M quizs (deafult: M=5) in queue
+        - Pick M quizs (default: M=6) in queue
         - Use answers of picked quizs as choices (the number of choices is always M)
     - Show quiz
         - Pick the quiz from queue
@@ -56,7 +56,7 @@
     - Normalize on import (trim whitespace, case-fold, Unicode normalize); deduplicate identical (question, answer) per target
     - Validate CSV is valid and has at least M+C quizs on first import; later imports have no minimum
 - Configuration
-    - User can customize N, M, C, p_n, p_w, p_c
+    - User can customize N, M, C, success rate threshold (for Confident status), p_n, p_w, p_c
     - Choices per prompt are always M; when a category is unavailable, re-normalize remaining weights
 
 ## Screens

@@ -179,6 +179,34 @@ export default function SettingsPage() {
               />
             </div>
 
+            {/* Success Rate Threshold */}
+            <div className="p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+              <label className="block mb-2">
+                <span className="text-lg font-semibold" style={{ color: 'var(--cyber-gold)' }}>
+                  Success Rate Threshold for Confident
+                </span>
+                <p className="text-sm opacity-70 mt-1">
+                  Minimum success rate (0-1) required for a quiz to be categorized as Confident. Default: 0.8 (80%)
+                </p>
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                value={config.successRateThreshold}
+                onChange={(e) =>
+                  setConfig({ ...config, successRateThreshold: parseFloat(e.target.value) || 0.8 })
+                }
+                className="mt-2 w-full px-4 py-2 rounded"
+                style={{
+                  backgroundColor: 'var(--cyber-dark)',
+                  color: 'var(--cyber-teal)',
+                  border: '1px solid var(--cyber-teal)',
+                }}
+              />
+            </div>
+
             {/* Category Weights */}
             <div className="p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
               <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--cyber-gold)' }}>

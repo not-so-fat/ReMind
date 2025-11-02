@@ -33,16 +33,17 @@ Notes:
 - No persistent cooldown fields; cooldown is enforced per session only.
 
 ## Configuration (per Target)
-- N: min trials threshold for status, default 3
-- M: queue size, default 5
+- N: min trials threshold for status, default 5
+- M: queue size, default 6
 - C: cooldown turns, default 10
+- Success rate threshold: threshold for Confident status, default 0.8 (80%)
 - Weights: p_n=0.4, p_w=0.5, p_c=0.1
 - Store in Target.configJson with Zod schema; editable via Settings UI.
 
 ## Status Logic
 - If numTrials < N → "New"
 - Else successRate = numSuccess / numTrials
-  - If successRate < 0.5 → "Wandering"
+  - If successRate < successRateThreshold (default 0.8) → "Wandering"
   - Else → "Confident"
 
 ## Cooldown & Activeness (Session-scoped)
@@ -128,6 +129,7 @@ export interface TargetConfig {
   minTrialsForStatus: number; // N
   queueSize: number;          // M
   cooldownTurns: number;      // C
+  successRateThreshold: number; // Threshold for Confident status (0-1)
   weightNew: number;          // p_n
   weightWandering: number;    // p_w
   weightConfident: number;    // p_c
