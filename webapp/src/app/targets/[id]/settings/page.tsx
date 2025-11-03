@@ -278,34 +278,74 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 md:gap-4">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-6 md:px-8 py-2 md:py-3 rounded text-sm md:text-base"
-              style={{
-                backgroundColor: 'var(--cyber-teal)',
-                color: 'var(--cyber-dark)',
-                cursor: saving ? 'not-allowed' : 'pointer',
-                opacity: saving ? 0.5 : 1,
-              }}
-            >
-              {saving ? 'Saving...' : 'Save Settings'}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push(`/targets/${targetId}/practice`)}
-              className="px-6 md:px-8 py-2 md:py-3 rounded border text-sm md:text-base"
-              style={{
-                borderColor: 'var(--cyber-teal)',
-                color: 'var(--cyber-teal)',
-                backgroundColor: 'transparent',
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+                  <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 md:gap-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="px-6 md:px-8 py-2 md:py-3 rounded text-sm md:text-base"
+                      style={{
+                        backgroundColor: 'var(--cyber-teal)',
+                        color: 'var(--cyber-dark)',
+                        cursor: saving ? 'not-allowed' : 'pointer',
+                        opacity: saving ? 0.5 : 1,
+                      }}
+                    >
+                      {saving ? 'Saving...' : 'Save Settings'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/targets/${targetId}/practice`)}
+                      className="px-6 md:px-8 py-2 md:py-3 rounded border text-sm md:text-base"
+                      style={{
+                        borderColor: 'var(--cyber-teal)',
+                        color: 'var(--cyber-teal)',
+                        backgroundColor: 'transparent',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+
+                {/* Delete Target Section */}
+                <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+                  <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4" style={{ color: 'var(--card-red)' }}>
+                    Danger Zone
+                  </h2>
+                  <p className="text-sm md:text-base opacity-70 mb-4 md:mb-6">
+                    Deleting this target will permanently remove all quizzes, trials, and progress. This action cannot be undone.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (confirm(`Are you sure you want to delete "${target.name}"? This will permanently delete all quizzes and progress. This action cannot be undone.`)) {
+                        try {
+                          const res = await fetch(`/api/targets/${targetId}`, {
+                            method: 'DELETE',
+                          });
+
+                          if (res.ok) {
+                            alert('Target deleted successfully');
+                            router.push('/');
+                          } else {
+                            const error = await res.json();
+                            alert(`Error: ${error.error || 'Failed to delete target'}`);
+                          }
+                        } catch (error) {
+                          console.error('Error deleting target:', error);
+                          alert('Failed to delete target');
+                        }
+                      }
+                    }}
+                    className="px-6 md:px-8 py-2 md:py-3 rounded text-sm md:text-base"
+                    style={{
+                      backgroundColor: 'var(--card-red)',
+                      color: 'var(--cyber-dark)',
+                    }}
+                  >
+                    Delete Target
+                  </button>
+                </div>
       </main>
     </div>
   );

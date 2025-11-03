@@ -74,16 +74,27 @@ export default function ReviewPage() {
         body: formData,
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        alert(`Imported ${data.imported} quiz${data.imported !== 1 ? 'zes' : ''}`);
-        setImportFile(null);
-        setShowImport(false);
-        await loadReviewData();
-      } else {
-        const error = await res.json();
-        alert(`Error: ${error.error || 'Failed to import'}`);
-      }
+              if (res.ok) {
+                const data = await res.json();
+                let message = `Imported ${data.imported} quiz${data.imported !== 1 ? 'zes' : ''}`;
+                if (data.totalRows !== undefined) {
+                  message += `\n\nFile statistics:\n- Total rows in file: ${data.totalRows}`;
+                  message += `\n- Unique entries found: ${data.uniqueInFile || data.total}`;
+                  if (data.skippedInFile > 0) {
+                    message += `\n- Duplicates skipped in file: ${data.skippedInFile}`;
+                  }
+                  if (data.skippedInDb > 0) {
+                    message += `\n- Already existed in database: ${data.skippedInDb}`;
+                  }
+                }
+                alert(message);
+                setImportFile(null);
+                setShowImport(false);
+                await loadReviewData();
+              } else {
+                const error = await res.json();
+                alert(`Error: ${error.error || 'Failed to import'}`);
+              }
     } catch (error) {
       console.error('Error importing:', error);
       alert('Failed to import CSV');
@@ -243,12 +254,36 @@ export default function ReviewPage() {
               <h3 className="text-lg md:text-xl mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>
                 Import CSV
               </h3>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                className="mb-4"
-              />
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-sm opacity-70">
+                    Import CSV file {importFile ? `: ${importFile.name}` : ''}
+                  </span>
+                  <label
+                    htmlFor="csv-upload-review"
+                    className="px-3 py-2 rounded cursor-pointer text-xs md:text-sm whitespace-nowrap"
+                    style={{
+                      backgroundColor: 'var(--cyber-teal)',
+                      color: 'var(--cyber-dark)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = '0.8';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                    }}
+                  >
+                    {importFile ? 'Change File' : 'Choose File'}
+                  </label>
+                  <input
+                    id="csv-upload-review"
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </div>
+              </div>
               <label className="flex items-center gap-2 mb-4">
                 <input
                   type="checkbox"

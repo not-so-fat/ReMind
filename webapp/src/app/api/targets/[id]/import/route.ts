@@ -32,7 +32,7 @@ export async function POST(
     }
 
     const csvContent = await file.text();
-    const parsedQuizzes = parseCSV(csvContent, hasHeader);
+    const parseResult = parseCSV(csvContent, hasHeader);
 
     // Get config
     const config = target.configJson
@@ -43,12 +43,13 @@ export async function POST(
     const isFirstImport = target._count.quizzes === 0;
     if (isFirstImport) {
       const minRequired = config.queueSize + config.cooldownTurns;
-      validateMinimumQuizzes(parsedQuizzes, minRequired);
+      validateMinimumQuizzes(parseResult.quizzes, minRequired);
     }
 
     // Import quizzes (ignore duplicates due to unique constraint)
     let importedCount = 0;
-    for (const quiz of parsedQuizzes) {
+    let skippedInDb = 0;
+    for (const quiz of parseResult.quizzes) {
       try {
         await db.quiz.create({
           data: {
@@ -63,12 +64,16 @@ export async function POST(
         if (error?.code !== 'P2002') {
           throw error;
         }
+        skippedInDb++;
       }
     }
 
     return NextResponse.json({
       imported: importedCount,
-      total: parsedQuizzes.length,
+      totalRows: parseResult.totalRows,
+      uniqueInFile: parseResult.uniqueEntries,
+      skippedInFile: parseResult.skippedRows,
+      skippedInDb: skippedInDb,
     });
   } catch (error) {
     if (error instanceof Error) {

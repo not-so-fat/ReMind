@@ -16,13 +16,20 @@ export function normalizeString(str: string): string {
     .toLowerCase();
 }
 
+export interface ParseResult {
+  quizzes: ParsedQuiz[];
+  totalRows: number;
+  skippedRows: number;
+  uniqueEntries: number;
+}
+
 /**
  * Parse CSV file and extract quiz pairs.
  * @param csvContent Raw CSV string
  * @param hasHeader Whether first row is header (skip it)
- * @returns Array of parsed quizzes with normalized strings
+ * @returns Parse result with quizzes and statistics
  */
-export function parseCSV(csvContent: string, hasHeader: boolean = false): ParsedQuiz[] {
+export function parseCSV(csvContent: string, hasHeader: boolean = false): ParseResult {
   const result = Papa.parse<string[]>(csvContent, {
     header: false,
     skipEmptyLines: true,
@@ -40,12 +47,15 @@ export function parseCSV(csvContent: string, hasHeader: boolean = false): Parsed
 
   // Skip header if present
   const dataRows = hasHeader ? rows.slice(1) : rows;
+  const totalRows = dataRows.length;
 
   const quizzes: ParsedQuiz[] = [];
   const seen = new Set<string>(); // For deduplication
+  let skippedRows = 0;
 
   for (const row of dataRows) {
     if (row.length < 2) {
+      skippedRows++;
       continue; // Skip rows without at least 2 columns
     }
 
@@ -53,6 +63,7 @@ export function parseCSV(csvContent: string, hasHeader: boolean = false): Parsed
     const answer = row[1]?.trim();
 
     if (!question || !answer) {
+      skippedRows++;
       continue; // Skip rows with empty question or answer
     }
 
@@ -67,10 +78,17 @@ export function parseCSV(csvContent: string, hasHeader: boolean = false): Parsed
         question: question, // Store original (not normalized) for display
         answer: answer,
       });
+    } else {
+      skippedRows++; // Count duplicates as skipped
     }
   }
 
-  return quizzes;
+  return {
+    quizzes,
+    totalRows,
+    skippedRows,
+    uniqueEntries: quizzes.length,
+  };
 }
 
 /**
@@ -82,7 +100,7 @@ export function validateMinimumQuizzes(
 ): void {
   if (quizzes.length < minQuizzes) {
     throw new Error(
-      `Insufficient quizzes: found ${quizzes.length}, required at least ${minQuizzes}`
+      `Insufficient unique quizzes: found ${quizzes.length}, required at least ${minQuizzes}`
     );
   }
 }

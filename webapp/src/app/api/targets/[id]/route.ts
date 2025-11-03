@@ -78,3 +78,37 @@ export async function PATCH(
   }
 }
 
+/**
+ * DELETE /api/targets/[id] - Delete a target (and all associated quizzes/trials via cascade)
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // Check if target exists
+    const target = await db.target.findUnique({
+      where: { id },
+    });
+
+    if (!target) {
+      return NextResponse.json({ error: 'Target not found' }, { status: 404 });
+    }
+
+    // Delete target (cascade will delete all quizzes and trials)
+    await db.target.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting target:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete target' },
+      { status: 500 }
+    );
+  }
+}
+
