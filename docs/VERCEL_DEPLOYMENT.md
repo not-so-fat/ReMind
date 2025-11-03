@@ -1,291 +1,225 @@
-# Vercel Deployment Plan for ReMind
+# Vercel Deployment Guide
 
 ## Overview
 
-This document outlines the steps and considerations for deploying ReMind to Vercel. The main challenge is migrating from SQLite (file-based database) to a serverless-compatible database since Vercel's serverless functions don't support file-based databases.
+ReMind was migrated from SQLite to PostgreSQL to enable deployment on Vercel's serverless platform. SQLite (file-based) doesn't work with serverless functions, so we use Vercel Postgres (Neon/Supabase) instead.
 
-## Key Challenges
+## Approach Taken
 
-1. **Database Migration**: SQLite → PostgreSQL (or compatible hosted database)
-2. **Prisma Schema Update**: Change provider from `sqlite` to `postgresql`
-3. **Environment Variables**: Set up database connection string
-4. **Migrations**: Run Prisma migrations on Vercel
-5. **Build Configuration**: Ensure Next.js builds correctly with Prisma
+### Changes Made
 
-## Step-by-Step Deployment Plan
+1. **Database Provider**: SQLite → PostgreSQL
+   - Updated `prisma/schema.prisma`: Changed provider from `sqlite` to `postgresql`
 
-### Phase 1: Database Migration Setup
+2. **Database Connection**: Simplified `src/lib/db.ts`
+   - Removed SQLite-specific path handling
+   - Added support for `DATABASE_URL` and `POSTGRES_PRISMA_URL` (Vercel auto-provides)
 
-#### Option A: Vercel Postgres (Recommended)
-- **Pros**: Native integration, easy setup, included in Vercel plans
-- **Cons**: Limited to Vercel ecosystem
-- **Cost**: Included in Pro plan, or available as addon
+3. **Build Configuration**:
+   - Added `postinstall` script to generate Prisma client
+   - Updated `build` script to include Prisma generation
+   - Added `db:migrate:deploy` for production migrations
+   - Created `vercel.json` with build commands
 
-#### Option B: External PostgreSQL (Supabase, Neon, Railway, etc.)
-- **Pros**: More flexible, can use with other platforms
-- **Cons**: Requires external account setup
-- **Cost**: Usually has free tier, then pay-as-you-go
+### Why PostgreSQL?
 
-**Recommendation**: Start with Vercel Postgres for simplicity, can migrate later if needed.
+- Vercel serverless functions don't support file-based databases
+- PostgreSQL works seamlessly with Prisma
+- Vercel provides managed Postgres options (Neon, Supabase)
+- Scales well for serverless architecture
 
-### Phase 2: Code Changes Required
+## Deployment Steps
 
-#### 2.1 Update Prisma Schema
+### Prerequisites
 
-Change `webapp/prisma/schema.prisma`:
+- Vercel account (sign up at vercel.com)
+- GitHub repository connected to Vercel
+- Database created in Vercel (see Database Setup below)
 
-```prisma
-datasource db {
-  provider = "postgresql"  // Changed from "sqlite"
-  url      = env("DATABASE_URL")
-  relationMode = "prisma"  // Optional: if using connection pooling
-}
-```
+### Step 1: Database Setup
 
-**Note**: Some SQLite-specific features may need adjustment:
-- Ensure all field types are PostgreSQL-compatible
-- Review JSON fields (should work the same)
-- Check indexes (syntax is compatible)
+1. In Vercel project dashboard → **Storage** tab
+2. Click **Create Database** → Select **Postgres**
+3. **Recommended: Choose Neon** (best for serverless, free tier available)
+   - Alternative: Supabase (if you need additional features later)
+4. Select region closest to your users
+5. Click **Create**
 
-#### 2.2 Update Database Connection Logic
+Vercel automatically sets these environment variables:
+- `POSTGRES_URL` - Connection pooling URL
+- `POSTGRES_PRISMA_URL` - Prisma-compatible connection string
+- `POSTGRES_URL_NON_POOLING` - Direct connection URL
 
-Review `webapp/src/lib/db.ts`:
-- Remove SQLite-specific path handling
-- Ensure Prisma Client is properly instantiated
-- Connection pooling may be beneficial for serverless
+### Step 2: Configure Vercel Project
 
-#### 2.3 Update Package.json Scripts
+1. **Set Root Directory**:
+   - Go to **Settings** → **General**
+   - Find **Root Directory** → Click **Edit**
+   - Set to: `webapp`
+   - Click **Save**
 
-Add migration script for production:
+2. **Set DATABASE_URL Environment Variable**:
+   - Go to **Settings** → **Environment Variables**
+   - Click **Add New**
+   - **Key**: `DATABASE_URL`
+   - **Value**: Copy from `POSTGRES_PRISMA_URL` (already set by Vercel)
+   - **Environments**: Select all (Production, Preview, Development)
+   - Click **Save**
 
-```json
-{
-  "scripts": {
-    "postinstall": "prisma generate",
-    "db:migrate:deploy": "prisma migrate deploy"
-  }
-}
-```
+3. **Verify Build Settings** (auto-detected):
+   - Framework Preset: Next.js ✅
+   - Build Command: `pnpm build` (includes Prisma generation via `postinstall`)
+   - Output Directory: `.next` ✅
+   - Install Command: `pnpm install` ✅
 
-### Phase 3: Vercel Configuration
+### Step 3: Deploy
 
-#### 3.1 Create `vercel.json` (if needed)
-
-Basic configuration (Vercel usually auto-detects Next.js, but we can be explicit):
-
-```json
-{
-  "buildCommand": "cd webapp && pnpm install && pnpm db:generate && pnpm build",
-  "outputDirectory": "webapp/.next",
-  "framework": "nextjs",
-  "installCommand": "cd webapp && pnpm install"
-}
-```
-
-**Note**: Actually, Vercel auto-detects Next.js projects. We may need to:
-- Set root directory to `webapp` in Vercel dashboard
-- Or adjust build settings
-
-#### 3.2 Environment Variables
-
-Set in Vercel dashboard:
-- `DATABASE_URL`: PostgreSQL connection string
-- `DIRECT_URL`: Direct database connection (if using connection pooling)
-
-### Phase 4: Migration Strategy
-
-#### 4.1 Data Migration (if you have existing data)
-
-If you have existing SQLite data:
-1. Export data from SQLite
-2. Transform to PostgreSQL format
-3. Import to new PostgreSQL database
-
-Script approach:
+**Option A: Push to GitHub** (Recommended)
 ```bash
-# Export from SQLite
-sqlite3 prisma/dev.db .dump > export.sql
-
-# Transform and import to PostgreSQL
-# (May need custom script depending on data)
+git push origin main
 ```
 
-#### 4.2 Schema Migration
+**Option B: Manual Deploy**
+- Go to **Deployments** tab
+- Click **Redeploy** on latest deployment
 
-1. Create new migration for PostgreSQL:
-   ```bash
-   cd webapp
-   # Update schema.prisma first
-   pnpm prisma migrate dev --name migrate_to_postgresql
-   ```
+Wait for build to complete (first build may take a few minutes).
 
-2. Test locally with PostgreSQL connection string
-3. Deploy migration on Vercel
+### Step 4: Run Database Migrations
 
-### Phase 5: Deployment Steps
+After first successful deployment, create database tables:
 
-#### Step 1: Set Up Database
+**Using Vercel CLI** (Recommended):
 
-**If using Vercel Postgres:**
-1. Go to Vercel dashboard
-2. Select your project (or create new)
-3. Go to Storage → Create Database → Postgres
-4. Note the connection strings provided
+```bash
+# Install Vercel CLI
+npm i -g vercel
 
-**If using External Database:**
-1. Sign up for provider (Supabase, Neon, etc.)
-2. Create new PostgreSQL database
-3. Get connection string (format: `postgresql://user:pass@host:port/db`)
+# Navigate to webapp directory
+cd webapp
 
-#### Step 2: Update Local Development
+# Login and link project
+vercel login
+vercel link  # Select your project when prompted
 
-1. Update `prisma/schema.prisma` to use PostgreSQL
-2. Create `.env.local` with new `DATABASE_URL`
-3. Run migrations: `pnpm db:migrate`
-4. Test locally
+# Pull environment variables
+vercel env pull .env.local
 
-#### Step 3: Configure Vercel Project
-
-1. Install Vercel CLI (optional but helpful):
-   ```bash
-   npm i -g vercel
-   ```
-
-2. Link project:
-   ```bash
-   cd webapp
-   vercel link
-   ```
-
-3. Set environment variables in Vercel dashboard:
-   - `DATABASE_URL`: Production PostgreSQL connection string
-   - Set for Production, Preview, and Development environments
-
-#### Step 4: Adjust Build Settings
-
-In Vercel dashboard → Settings → General:
-- **Root Directory**: Set to `webapp` (if not deploying from root)
-- **Build Command**: `pnpm install && pnpm db:generate && pnpm build`
-- **Output Directory**: `.next` (auto-detected for Next.js)
-- **Install Command**: `pnpm install`
-
-#### Step 5: Run Migrations on Deploy
-
-Add to `package.json`:
-```json
-{
-  "scripts": {
-    "postinstall": "prisma generate",
-    "vercel-build": "prisma migrate deploy && prisma generate && next build"
-  }
-}
+# Run migrations
+pnpm db:migrate:deploy
 ```
 
-Or use Vercel's build hooks.
+**Alternative: Create Migration Locally**
 
-#### Step 6: Deploy
+```bash
+cd webapp
 
-1. Push to connected Git repository
-2. Vercel will automatically deploy
-3. Check build logs for errors
-4. Run migrations manually if needed: `vercel env pull` then `pnpm db:migrate:deploy`
+# Set DATABASE_URL to your Vercel Postgres connection
+# Get it from: Vercel Dashboard → Storage → Your database → Connection strings
+export DATABASE_URL="postgresql://..." # Your POSTGRES_PRISMA_URL
 
-### Phase 6: Testing & Verification
+# Create and apply migration
+pnpm prisma migrate dev --name init_postgresql
 
-#### Checklist:
-- [ ] Build succeeds on Vercel
-- [ ] Migrations run successfully
-- [ ] Database connection works
-- [ ] Create target functionality works
-- [ ] CSV import works
-- [ ] Practice flow works
-- [ ] Review/stats display correctly
-- [ ] Settings can be updated
+# Commit and push
+git add prisma/migrations
+git commit -m "Add PostgreSQL migration"
+git push origin main
+```
 
-#### Common Issues to Watch For:
+### Step 5: Verify Deployment
 
-1. **Connection Pooling**: Serverless functions may exhaust connections
-   - Solution: Use connection pooling (Prisma Data Proxy or PgBouncer)
-   - Or set `connection_limit` in Prisma
+1. **Check Build Logs**:
+   - Go to **Deployments** tab → Click latest deployment
+   - Verify build succeeded without errors
 
-2. **Migration Timing**: Migrations may fail if run at wrong time
-   - Solution: Run migrations as separate step before deployment
+2. **Test Application**:
+   - Visit deployed URL (shown in Vercel dashboard)
+   - Create a new target
+   - Import CSV file
+   - Practice a quiz
+   - Verify data persists
 
-3. **Build Timeouts**: Prisma generation can be slow
-   - Solution: Cache `node_modules` and generated Prisma client
+3. **Verify Database**:
+   - Check Vercel → **Storage** → Your database → Browse data (if available)
+   - Or use Prisma Studio locally:
+     ```bash
+     cd webapp
+     vercel env pull .env.local
+     pnpm db:studio
+     ```
 
-4. **File Upload Limits**: CSV uploads may hit size limits
-   - Solution: Vercel has 4.5MB limit for serverless functions
-   - Consider client-side parsing and batch API calls for large files
+## Database Options
 
-## Recommended Approach (Summary)
+When creating the database in Vercel, you'll see options: **Neon**, **Supabase**, **Prisma**, or **Nile**.
 
-1. **Choose Vercel Postgres** (easiest integration)
-2. **Update Prisma schema** to PostgreSQL
-3. **Test locally** with PostgreSQL connection string
-4. **Set up Vercel project** and configure environment variables
-5. **Deploy** and verify migrations run
-6. **Test all functionality** on deployed site
+**Recommended: Neon** ⭐
+- Best for serverless-first architecture
+- Auto-scales to zero when not in use
+- Built-in connection pooling
+- Free tier: 0.5GB storage (sufficient for quiz data)
+- Simple setup, Prisma-friendly
 
-## Files to Create/Modify
+**Alternative: Supabase**
+- Good if you might need authentication/storage features later
+- Free tier: 500MB database
+- More features, well-established platform
 
-### New Files:
-- `vercel.json` (optional, for explicit config)
-- Migration script (if migrating existing data)
+**Not Recommended for ReMind**: Prisma (paid), Nile (multi-tenant, overkill)
 
-### Files to Modify:
-- `webapp/prisma/schema.prisma` (change provider)
-- `webapp/package.json` (add postinstall/vercel-build scripts)
-- `webapp/src/lib/db.ts` (remove SQLite-specific code if any)
-- `.env.local` (update DATABASE_URL)
+See `VERCEL_POSTGRES_OPTIONS.md` for detailed comparison.
 
-## Rollback Plan
+## Troubleshooting
 
-If issues arise:
-1. Keep local SQLite setup working
-2. Can revert Prisma schema change
-3. Vercel deployments are immutable - can revert to previous deployment
-4. Database can be exported/backed up
+### Build Fails: "DATABASE_URL not set"
+- Verify `DATABASE_URL` environment variable is set in Vercel dashboard
+- Copy value from `POSTGRES_PRISMA_URL`
 
-## Next Steps
+### Build Fails: "Prisma Client not generated"
+- Check build logs - `postinstall` should run `prisma generate`
+- Verify `package.json` has: `"postinstall": "prisma generate"`
 
-1. **Decision**: Choose database provider (Vercel Postgres recommended)
-2. **Development**: Update schema and test locally
-3. **Staging**: Deploy to Vercel preview environment first
-4. **Production**: Deploy to production after verification
+### Migration Fails: "No migrations found"
+- Create migration locally first (see Step 4 Alternative)
+- Then push and deploy
 
-## Additional Considerations
+### App Works but Shows Database Errors
+- Verify migrations were run successfully
+- Check database connection strings in Vercel dashboard
+- Review Vercel function logs for connection errors
 
-### Cost Estimation
-- **Vercel Postgres**: 
-  - Hobby: Free tier available
-  - Pro: Included in Pro plan ($20/month)
-- **External PostgreSQL**:
-  - Supabase: Free tier (500MB), then $25/month
-  - Neon: Free tier (3GB), then pay-as-you-go
-  - Railway: Free tier, then usage-based
+## Post-Deployment
 
-### Performance
-- Connection pooling recommended for serverless
-- Consider Prisma Data Proxy for connection management
-- Monitor cold start times (first request may be slower)
-
-### Security
-- Never commit `.env` files
-- Use Vercel's environment variable encryption
-- Rotate database credentials regularly
-- Consider IP allowlisting for database (if external)
+### Custom Domain (Optional)
+1. Go to **Settings** → **Domains**
+2. Add your custom domain
+3. Follow DNS configuration instructions
+4. SSL certificate is automatic
 
 ### Monitoring
-- Set up Vercel Analytics
-- Monitor database connection pool usage
-- Track API response times
-- Set up error alerts
+- Vercel Analytics (included)
+- Check function logs for errors
+- Monitor database usage in Storage tab
 
-## References
+## Files Modified for Vercel
 
+- `webapp/prisma/schema.prisma` - Changed provider to `postgresql`
+- `webapp/src/lib/db.ts` - Simplified for PostgreSQL
+- `webapp/package.json` - Added build/migration scripts
+- `webapp/vercel.json` - Vercel configuration
+
+## Quick Checklist
+
+- [ ] Database created (Neon/Supabase)
+- [ ] Root directory set to `webapp`
+- [ ] `DATABASE_URL` environment variable set
+- [ ] Build settings verified
+- [ ] First deployment completed
+- [ ] Migrations run successfully
+- [ ] App tested and working
+
+## Support
+
+- [Vercel Documentation](https://vercel.com/docs)
 - [Vercel Postgres Docs](https://vercel.com/docs/storage/vercel-postgres)
-- [Prisma with PostgreSQL](https://www.prisma.io/docs/concepts/database-connectors/postgresql)
-- [Next.js on Vercel](https://vercel.com/docs/frameworks/nextjs)
-- [Prisma Migrations](https://www.prisma.io/docs/concepts/components/prisma-migrate)
-
+- [Prisma on Vercel](https://www.prisma.io/docs/guides/deployment/deployment-guides/deploying-to-vercel)
