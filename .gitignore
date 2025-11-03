@@ -117,7 +117,9 @@ dist
 
 # Gatsby files
 .cache/
-public
+# Note: Next.js uses public/ for static assets - don't ignore webapp/public
+/public
+!webapp/public
 
 # Storybook build outputs
 .out
