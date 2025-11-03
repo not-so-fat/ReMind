@@ -89,7 +89,26 @@ Wait for build to complete (first build may take a few minutes).
 
 After first successful deployment, create database tables:
 
-**Using Vercel CLI** (Recommended):
+**Option 1: Run Locally with Production DATABASE_URL** (Recommended - Keeps local separate):
+
+```bash
+cd webapp
+
+# Get your DATABASE_URL from Vercel Dashboard:
+# 1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+# 2. Copy the value of POSTGRES_PRISMA_URL
+# 3. Temporarily set it in your terminal:
+
+export DATABASE_URL="postgresql://..." # Paste your POSTGRES_PRISMA_URL here
+
+# Run migrations (this connects to your Vercel database)
+pnpm db:migrate:deploy
+
+# Unset the variable to avoid using production DB by accident
+unset DATABASE_URL
+```
+
+**Option 2: Using Vercel CLI** (Alternative):
 
 ```bash
 # Install Vercel CLI
@@ -98,18 +117,20 @@ npm i -g vercel
 # Navigate to webapp directory
 cd webapp
 
-# Login and link project
+# Login to Vercel (no linking needed if you specify project)
 vercel login
-vercel link  # Select your project when prompted
 
-# Pull environment variables
-vercel env pull .env.local
+# Pull environment variables (use --yes to skip linking)
+vercel env pull .env.local --yes
+
+# Or specify project explicitly:
+# vercel env pull .env.local --project=YOUR_PROJECT_NAME
 
 # Run migrations
 pnpm db:migrate:deploy
 ```
 
-**Alternative: Create Migration Locally**
+**Option 3: Create Migration Locally and Push** (If migrations don't exist yet):
 
 ```bash
 cd webapp
@@ -118,10 +139,10 @@ cd webapp
 # Get it from: Vercel Dashboard → Storage → Your database → Connection strings
 export DATABASE_URL="postgresql://..." # Your POSTGRES_PRISMA_URL
 
-# Create and apply migration
+# Create migration
 pnpm prisma migrate dev --name init_postgresql
 
-# Commit and push
+# Commit and push (migrations will be applied on next deployment)
 git add prisma/migrations
 git commit -m "Add PostgreSQL migration"
 git push origin main
@@ -142,11 +163,14 @@ git push origin main
 
 3. **Verify Database**:
    - Check Vercel → **Storage** → Your database → Browse data (if available)
-   - Or use Prisma Studio locally:
+   - Or use Prisma Studio locally (without linking):
      ```bash
      cd webapp
-     vercel env pull .env.local
+     # Temporarily set DATABASE_URL from Vercel dashboard
+     export DATABASE_URL="postgresql://..." # Your POSTGRES_PRISMA_URL
      pnpm db:studio
+     # Unset when done
+     unset DATABASE_URL
      ```
 
 ## Database Options
