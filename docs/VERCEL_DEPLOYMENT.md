@@ -101,11 +101,24 @@ cd webapp
 
 export DATABASE_URL="postgresql://..." # Paste your POSTGRES_PRISMA_URL here
 
-# Run migrations (this connects to your Vercel database)
+# Step 1: Create the migration (if migrations don't exist yet)
+# Skip this if you already have PostgreSQL migrations
+pnpm prisma migrate dev --create-only --name init_postgresql
+
+# Step 2: Apply migrations to your Vercel database
 pnpm db:migrate:deploy
 
 # Unset the variable to avoid using production DB by accident
 unset DATABASE_URL
+```
+
+**Note:** If you see an error about SQLite migrations, you need to start fresh:
+```bash
+# Remove old SQLite migrations
+rm -rf prisma/migrations
+mkdir -p prisma/migrations
+
+# Then create new PostgreSQL migration (see Step 1 above)
 ```
 
 **Option 2: Using Vercel CLI** (Alternative):
