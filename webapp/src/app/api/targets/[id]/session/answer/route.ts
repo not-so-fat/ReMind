@@ -17,9 +17,10 @@ export async function POST(
     const body = await request.json();
     const { quizId, answer, queue, recentAnsweredIds } = body;
 
-    if (!quizId || !answer || !Array.isArray(queue) || !Array.isArray(recentAnsweredIds)) {
+    // Allow empty string for answer to represent timeout; ensure type is string
+    if (!quizId || typeof answer !== 'string' || !Array.isArray(queue) || !Array.isArray(recentAnsweredIds)) {
       return NextResponse.json(
-        { error: 'Missing required fields: quizId, answer, queue, recentAnsweredIds' },
+        { error: 'Missing required fields: quizId, answer (string), queue, recentAnsweredIds' },
         { status: 400 }
       );
     }
@@ -37,15 +38,18 @@ export async function POST(
       ? TargetConfigSchema.parse(target.configJson)
       : DEFAULT_CONFIG;
 
-    // Evaluate answer
+    // Evaluate answer (empty answer indicates timeout - treat as incorrect)
     const evaluation = await evaluateAnswer({
       targetId: id,
       quizId,
-      userAnswer: answer,
+      userAnswer: answer || '___TIMEOUT___', // Use a placeholder that won't match any answer
     });
+    // If timeout, force incorrect
+    const isTimeout = !answer || answer === '';
+    const finalCorrect = isTimeout ? false : evaluation.correct;
 
     // Record trial
-    await recordTrial(quizId, evaluation.correct);
+    await recordTrial(quizId, finalCorrect);
 
     // Get updated quiz stats
     const updatedQuiz = await db.quiz.findUnique({
@@ -63,7 +67,7 @@ export async function POST(
 
     const oldStatus = getQuizStatus(
       updatedQuiz.numTrials - 1,
-      evaluation.correct ? updatedQuiz.numSuccess - 1 : updatedQuiz.numSuccess,
+      finalCorrect ? updatedQuiz.numSuccess - 1 : updatedQuiz.numSuccess,
       config
     );
     const newStatus = getQuizStatus(
@@ -106,7 +110,7 @@ export async function POST(
       : null;
 
     return NextResponse.json({
-      correct: evaluation.correct,
+      correct: finalCorrect,
       acceptedAnswers: evaluation.acceptedAnswers,
       updatedQuiz: {
         id: updatedQuiz.id,

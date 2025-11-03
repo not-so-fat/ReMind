@@ -39,8 +39,23 @@ export default function ReviewPage() {
   async function loadTarget() {
     try {
       const res = await fetch(`/api/targets/${targetId}`);
-      const data = await res.json();
-      setTarget(data.target);
+      if (!res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const err = await res.json();
+          console.error('Error loading target:', err);
+        } else {
+          const txt = await res.text();
+          console.error('Error loading target (non-JSON):', txt.slice(0, 300));
+        }
+        return;
+      }
+      const data = await res.json().catch(async () => {
+        const txt = await res.text();
+        console.error('Non-JSON response for target:', txt.slice(0, 300));
+        return { target: null };
+      });
+      setTarget(data.target ?? null);
     } catch (error) {
       console.error('Error loading target:', error);
     }
@@ -50,8 +65,23 @@ export default function ReviewPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/targets/${targetId}/review`);
-      const data = await res.json();
-      setReviewData(data);
+      if (!res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const err = await res.json();
+          console.error('Error loading review data:', err);
+        } else {
+          const txt = await res.text();
+          console.error('Error loading review data (non-JSON):', txt.slice(0, 300));
+        }
+        return;
+      }
+      const data = await res.json().catch(async () => {
+        const txt = await res.text();
+        console.error('Non-JSON response for review:', txt.slice(0, 300));
+        return null;
+      });
+      if (data) setReviewData(data);
     } catch (error) {
       console.error('Error loading review data:', error);
     } finally {
@@ -75,7 +105,11 @@ export default function ReviewPage() {
       });
 
               if (res.ok) {
-                const data = await res.json();
+                const data = await res.json().catch(async () => {
+                  const txt = await res.text();
+                  console.error('Non-JSON response for import:', txt.slice(0, 300));
+                  return { imported: 0 };
+                });
                 let message = `Imported ${data.imported} quiz${data.imported !== 1 ? 'zes' : ''}`;
                 if (data.totalRows !== undefined) {
                   message += `\n\nFile statistics:\n- Total rows in file: ${data.totalRows}`;
@@ -92,8 +126,14 @@ export default function ReviewPage() {
                 setShowImport(false);
                 await loadReviewData();
               } else {
-                const error = await res.json();
-                alert(`Error: ${error.error || 'Failed to import'}`);
+                const ct = res.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                  const error = await res.json().catch(() => ({}));
+                  alert(`Error: ${error.error || 'Failed to import'}`);
+                } else {
+                  const txt = await res.text();
+                  alert(`Error: Failed to import\n${txt.slice(0, 300)}`);
+                }
               }
     } catch (error) {
       console.error('Error importing:', error);

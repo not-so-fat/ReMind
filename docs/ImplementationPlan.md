@@ -80,9 +80,12 @@ Notes: Server remains stateless (no in-memory sessions). All state is persisted 
   - List Target cards with name + stats
   - Create Target form + CSV import
 - app/targets/[id]/practice/page.tsx
+  - Ready screen: time limit selection (5s, 10s, or No limit) before starting practice
   - Header: nav/back, mode switch, center title with live stats
   - Body: today trial count, quiz card (status, success rate, #trials), choices grid (always M choices)
-  - Effects: success and failure animations
+  - Timer: countdown display when time limit is set; turns red at ≤2s; timeout treated as incorrect
+  - Feedback: explicit "Next" button to advance (no auto-advance); shows correct answers from displayed choices only
+  - Effects: success animations (pulse); incorrect feedback is static for readability
 - app/targets/[id]/review/page.tsx
   - Cumulative trials, category sizes, weekly chart
   - Import additional CSV (no M+C restriction)

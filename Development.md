@@ -51,6 +51,20 @@
         - Pick a new quiz and put it in the queue, and add the answer to choices
         - Make answered quiz inactive (set lastShownTurn = currentTurn; cooldown is C turns)
         - Advance the target's turn counter by +1; activeness is determined by (currentTurn - lastShownTurn)
+    - Hard Mode (Time Limit) - Practice Flow
+        - Time selection on "Ready?" screen: radio options [5s (Hard), 10s (Medium), No limit]. Default is 5 seconds.
+        - Flow (0-6):
+            0. Initialize: load target, stats; session starts on "Start Practice".
+            1. New quiz is set: when a new quiz id arrives, reset the timer to the selected time (or no timer if "No limit").
+            2. Wait for answer: timer counts down; turns red when ≤ 2s remain.
+            3a. If user answers before time runs out: stop timer and evaluate success.
+            3b. If timer hits 0: stop timer and treat as failure (timeout).
+            4. Show feedback: success/failure effect; choices colored (accepted answers green, wrong selection red).
+            5. Wait for user to click "Next".
+            6. On "Next": pick/apply next quiz; go back to step 1.
+        - Notes:
+            - No auto-advance in any case; waits for user "Next".
+            - Time limit is session-scoped (chosen on the "Ready?" screen per practice session).
 - Quiz import
     - Import quizs from CSV, 1st column question, 2nd column answer; can choose whether 1st row is header
     - Normalize on import (trim whitespace, case-fold, Unicode normalize); deduplicate identical (question, answer) per target
@@ -129,3 +143,57 @@ Font:
 --font-sans: Monaco, 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
 --font-serif: Georgia, serif; 
 --font-mono: Monaco, 'SF Mono', Menlo, 'Consolas', 'Liberation Mono', monospace;
+
+## Local Dev Environment (macOS, Homebrew Postgres)
+
+- Local testing uses PostgreSQL installed via Homebrew. The default DB role is your macOS username (no password).
+- Create a dev database named `remind_dev` and point Prisma to it via `DATABASE_URL`.
+
+Steps (Apple Silicon paths shown; adjust if Intel):
+
+```bash
+# Install and start PostgreSQL (run once)
+brew install postgresql@16
+brew services start postgresql@16
+
+# (Optional) Add PostgreSQL to PATH for CLI convenience
+echo 'export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# Create dev database using your macOS user
+createdb remind_dev
+
+# Project env (per repo)
+cd webapp
+echo "DATABASE_URL=\"postgresql://$(whoami)@localhost:5432/remind_dev\"" > .env.local
+
+# Generate Prisma client and apply migrations
+pnpm db:generate
+pnpm db:migrate:deploy
+```
+
+Notes:
+- Do NOT commit `.env.local` or `.env`.
+- If your local role has a password, extend the URL:
+  `postgresql://USER:PASSWORD@localhost:5432/remind_dev`
+- Intel Macs may use `/usr/local/opt/postgresql@16/bin` instead of `/opt/homebrew/...`.
+
+### Quick Start / Restart Script
+
+For convenience, use the `webapp/scripts/dev.sh` script to start/restart the dev server:
+
+```bash
+cd webapp
+bash scripts/dev.sh              # Start on port 3000 (default)
+bash scripts/dev.sh --port 3001  # Start on custom port
+```
+
+This script automatically:
+1. Creates/updates `.env` with `DATABASE_URL` if missing
+2. Kills any existing process on the target port
+3. Cleans the `.next` directory
+4. Runs `pnpm db:generate` and `pnpm db:migrate:deploy`
+5. Starts the Next.js dev server (Turbopack) on `127.0.0.1`
+6. Logs output to `dev.log` and saves PID for easy cleanup
+
+The script ensures a clean restart every time, avoiding common issues like stale locks or port conflicts.

@@ -29,14 +29,16 @@ export async function evaluateAnswer(args: {
   });
 
   const acceptedAnswers = allAnswers.map((q) => q.answer);
+  // Deduplicate answers to avoid repeated display
+  const uniqueAcceptedAnswers = Array.from(new Set(acceptedAnswers));
   
   // Normalize for comparison (trim, lowercase)
   const normalizedUserAnswer = normalizeAnswer(args.userAnswer);
-  const normalizedAccepted = acceptedAnswers.map(normalizeAnswer);
+  const normalizedAccepted = uniqueAcceptedAnswers.map(normalizeAnswer);
 
   const correct = normalizedAccepted.includes(normalizedUserAnswer);
 
-  return { correct, acceptedAnswers };
+  return { correct, acceptedAnswers: uniqueAcceptedAnswers };
 }
 
 /**

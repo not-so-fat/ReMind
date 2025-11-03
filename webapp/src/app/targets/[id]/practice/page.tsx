@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { getQuizStatus } from '@/lib/engine/status';
@@ -40,22 +40,161 @@ export default function PracticePage() {
     userAnswer: string;
     statusChanged: boolean;
   } | null>(null);
-  const [choicesForFeedback, setChoicesForFeedback] = useState<Array<{ quizId: string; answer: string }> | null>(null);
+  // During feedback, we freeze the current view and wait for explicit Next.
+  // We store the next session snapshot returned by the server and apply it on Next.
+  const [pendingAdvance, setPendingAdvance] = useState<{
+    queue: string[];
+    choices: Array<{ quizId: string; answer: string }>;
+    currentQuiz: {
+      id: string;
+      question: string;
+      numTrials: number;
+      numSuccess: number;
+    } | null;
+    recentAnsweredIds: string[];
+  } | null>(null);
   const [todayTrials, setTodayTrials] = useState(0);
   const [stats, setStats] = useState<{
     totalQuizzes: number;
     categoryCounts: Record<StatusCategory, number>;
   } | null>(null);
   const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [showReady, setShowReady] = useState(true);
+  const [timeLimitSeconds, setTimeLimitSeconds] = useState<number | null>(5); // null = infinity, number = seconds
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const currentQuizTimerRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (targetId) {
       loadTarget();
       loadStats();
-      initSession();
       loadTodayTrials();
+      // Don't initialize session until user clicks "Start" on ready screen
     }
   }, [targetId]);
+
+  const handleTimeout = useCallback(async () => {
+    if (!session || !session.currentQuiz || answering) return;
+
+    // Clear timer
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    // Submit as incorrect answer
+    setAnswering(true);
+    setLastResult(null);
+
+    try {
+      const res = await fetch(`/api/targets/${targetId}/session/answer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quizId: session.currentQuiz.id,
+          answer: '', // Empty answer indicates timeout
+          queue: session.queue,
+          recentAnsweredIds: session.recentAnsweredIds,
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to submit timeout');
+      }
+
+      // For timeout, use empty string as userAnswer to distinguish from wrong answer
+      // Filter acceptedAnswers to only show those from current choices
+      const choiceAnswers = session.choices.map((c) => c.answer);
+      const visibleAcceptedAnswers = (data.acceptedAnswers || []).filter((ans: string) =>
+        choiceAnswers.includes(ans)
+      );
+
+      setLastResult({
+        correct: false,
+        acceptedAnswers: visibleAcceptedAnswers,
+        userAnswer: '', // Empty string indicates timeout (not a selected wrong answer)
+        statusChanged: data.updatedQuiz.statusChanged,
+      });
+
+      await loadTodayTrials();
+      await loadStats();
+
+      // Hold next session snapshot; apply on explicit Next
+      setPendingAdvance({
+        queue: data.queue,
+        choices: data.choices,
+        currentQuiz: data.currentQuiz,
+        recentAnsweredIds: data.recentAnsweredIds,
+      });
+    } catch (error) {
+      console.error('Error handling timeout:', error);
+    } finally {
+      setAnswering(false);
+    }
+  }, [session, targetId, timeLimitSeconds]);
+
+  // Reset timer when new quiz appears and we're not in feedback
+  useEffect(() => {
+    if (!showReady && session?.currentQuiz && timeLimitSeconds !== null && !answering && !lastResult) {
+      // Clear any existing timer
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      currentQuizTimerRef.current = null; // Reset quiz tracking
+      setTimeRemaining(timeLimitSeconds);
+    } else if (!showReady && session?.currentQuiz && timeLimitSeconds === null) {
+      // No time limit (infinity)
+      setTimeRemaining(null);
+    }
+  }, [session?.currentQuiz?.id, timeLimitSeconds, showReady, answering, lastResult]);
+
+  // Timer effect - starts when quiz is shown and time limit is set
+  useEffect(() => {
+    const quizId = session?.currentQuiz?.id;
+    const shouldStartTimer = !showReady && quizId && timeLimitSeconds !== null && timeRemaining !== null && timeRemaining > 0 && !answering && !lastResult;
+    const timerAlreadyRunning = timerIntervalRef.current !== null && currentQuizTimerRef.current === quizId;
+
+    // If timer should not be running, clear it
+    if (!shouldStartTimer) {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+        currentQuizTimerRef.current = null;
+      }
+      return;
+    }
+
+    // If timer is already running for this quiz, don't restart it
+    if (timerAlreadyRunning) {
+      return;
+    }
+
+    // Start new timer for this quiz
+    currentQuizTimerRef.current = quizId;
+    const interval = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev === null || prev <= 1) {
+          // Timeout! Call handleTimeout
+          handleTimeout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    timerIntervalRef.current = interval;
+
+    return () => {
+      if (timerIntervalRef.current === interval) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+        currentQuizTimerRef.current = null;
+      }
+    };
+  }, [showReady, session?.currentQuiz?.id, timeLimitSeconds, timeRemaining, answering, lastResult, handleTimeout]);
 
   async function loadTarget() {
     try {
@@ -67,8 +206,10 @@ export default function PracticePage() {
         ? TargetConfigSchema.parse(data.target.configJson)
         : DEFAULT_CONFIG;
       setConfig(loadedConfig);
+      setLoading(false); // Set loading to false once target is loaded
     } catch (error) {
       console.error('Error loading target:', error);
+      setLoading(false);
     }
   }
 
@@ -120,6 +261,7 @@ export default function PracticePage() {
         recentAnsweredIds: data.recentAnsweredIds || [],
       });
       setLastResult(null);
+      setTimeRemaining(timeLimitSeconds !== null ? timeLimitSeconds : null);
     } catch (error) {
       console.error('Error initializing session:', error);
       alert('Failed to initialize session. Please make sure you have imported quizzes.');
@@ -128,11 +270,23 @@ export default function PracticePage() {
     }
   }
 
+  function handleStartPractice() {
+    setShowReady(false);
+    initSession();
+  }
+  
   async function handleAnswer(answer: string) {
     if (!session || !session.currentQuiz || answering) return;
 
+    // Clear timer
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
     setAnswering(true);
     setLastResult(null);
+    setTimeRemaining(null);
 
     try {
       const res = await fetch(`/api/targets/${targetId}/session/answer`, {
@@ -147,13 +301,19 @@ export default function PracticePage() {
       });
 
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to submit answer');
+      }
       
-      // Store current choices and quiz for feedback display
-      setChoicesForFeedback(session.choices);
-      
+      // Filter acceptedAnswers to only show those from current choices
+      const choiceAnswers = session.choices.map((c) => c.answer);
+      const visibleAcceptedAnswers = (data.acceptedAnswers || []).filter((ans: string) =>
+        choiceAnswers.includes(ans)
+      );
+
       setLastResult({
         correct: data.correct,
-        acceptedAnswers: data.acceptedAnswers,
+        acceptedAnswers: visibleAcceptedAnswers,
         userAnswer: answer,
         statusChanged: data.updatedQuiz.statusChanged,
       });
@@ -163,23 +323,32 @@ export default function PracticePage() {
       await loadTodayTrials();
       await loadStats();
 
-      // Clear result and update session (quiz and choices) after animation
-      setTimeout(() => {
-        setLastResult(null);
-        setChoicesForFeedback(null);
-        // Update session with new quiz and choices after feedback is cleared
-        setSession({
-          queue: data.queue,
-          choices: data.choices,
-          currentQuiz: data.currentQuiz,
-          recentAnsweredIds: data.recentAnsweredIds,
-        });
-      }, 2000);
+      // Hold next session snapshot; apply on explicit Next
+      setPendingAdvance({
+        queue: data.queue,
+        choices: data.choices,
+        currentQuiz: data.currentQuiz,
+        recentAnsweredIds: data.recentAnsweredIds,
+      });
     } catch (error) {
       console.error('Error submitting answer:', error);
     } finally {
       setAnswering(false);
     }
+  }
+
+  function handleNext() {
+    if (!pendingAdvance) return;
+    // Apply server-provided next state
+    setSession({
+      queue: pendingAdvance.queue,
+      choices: pendingAdvance.choices,
+      currentQuiz: pendingAdvance.currentQuiz,
+      recentAnsweredIds: pendingAdvance.recentAnsweredIds,
+    });
+    setPendingAdvance(null);
+    setLastResult(null);
+    setTimeRemaining(timeLimitSeconds !== null ? timeLimitSeconds : null);
   }
 
 
@@ -194,7 +363,107 @@ export default function PracticePage() {
     }
   }
 
-  if (loading || !session || !target) {
+  // Ready screen - show before session is initialized
+  if (showReady) {
+    if (loading || !target) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--cyber-dark)' }}>
+          <div className="text-xl" style={{ color: 'var(--cyber-teal)' }}>Loading...</div>
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen overflow-x-hidden flex items-center justify-center" style={{ backgroundColor: 'var(--cyber-dark)', color: 'var(--cyber-teal)' }}>
+        <div className="max-w-2xl mx-auto px-4 md:px-8 py-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-5xl font-bold mb-4" style={{ color: 'var(--cyber-gold)' }}>
+              Ready?
+            </h1>
+          </div>
+          
+          <div className="p-6 md:p-8 rounded-lg border-2 mb-6" style={{ borderColor: 'var(--cyber-teal)' }}>
+            <label className="block mb-4 text-lg md:text-xl font-semibold">
+              Time Limit:
+            </label>
+            
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="timeLimit"
+                  value="5"
+                  checked={timeLimitSeconds === 5}
+                  onChange={() => setTimeLimitSeconds(5)}
+                  className="w-5 h-5"
+                  style={{
+                    accentColor: 'var(--cyber-teal)',
+                  }}
+                />
+                <span className="text-base md:text-lg">5 seconds</span>
+              </label>
+              
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="timeLimit"
+                  value="10"
+                  checked={timeLimitSeconds === 10}
+                  onChange={() => setTimeLimitSeconds(10)}
+                  className="w-5 h-5"
+                  style={{
+                    accentColor: 'var(--cyber-teal)',
+                  }}
+                />
+                <span className="text-base md:text-lg">10 seconds</span>
+              </label>
+              
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="timeLimit"
+                  value="infinity"
+                  checked={timeLimitSeconds === null}
+                  onChange={() => setTimeLimitSeconds(null)}
+                  className="w-5 h-5"
+                  style={{
+                    accentColor: 'var(--cyber-teal)',
+                  }}
+                />
+                <span className="text-base md:text-lg">No limit</span>
+              </label>
+            </div>
+            
+            {timeLimitSeconds !== null && (
+              <p className="text-xs md:text-sm opacity-60 mt-4">
+                If you don't answer in time, it will count as incorrect
+              </p>
+            )}
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={handleStartPractice}
+              className="px-8 md:px-12 py-3 md:py-4 rounded text-lg md:text-xl font-bold"
+              style={{
+                backgroundColor: 'var(--cyber-teal)',
+                color: 'var(--cyber-dark)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '0.8';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
+            >
+              Start Practice
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--cyber-dark)' }}>
         <div className="text-xl" style={{ color: 'var(--cyber-teal)' }}>Loading...</div>
@@ -202,13 +471,15 @@ export default function PracticePage() {
     );
   }
 
-  const currentStatus = session.currentQuiz
-    ? getQuizStatus(session.currentQuiz.numTrials, session.currentQuiz.numSuccess, config)
+  // During feedback we keep showing the current session's quiz and choices until Next is clicked
+  const displayQuiz = session?.currentQuiz;
+  const currentStatus = displayQuiz
+    ? getQuizStatus(displayQuiz.numTrials, displayQuiz.numSuccess, config)
     : null;
-  const successRate = session.currentQuiz
-    ? session.currentQuiz.numTrials === 0
+  const successRate = displayQuiz
+    ? displayQuiz.numTrials === 0
       ? 0
-      : session.currentQuiz.numSuccess / session.currentQuiz.numTrials
+      : displayQuiz.numSuccess / displayQuiz.numTrials
     : 0;
 
   return (
@@ -224,7 +495,7 @@ export default function PracticePage() {
             {/* Top row: Title */}
             <div className="flex items-center justify-center">
               <h1 className="text-base md:text-xl font-bold text-center px-2" style={{ color: 'var(--cyber-gold)' }}>
-                {target.name}
+                {target?.name ?? ''}
               </h1>
             </div>
             {/* Review button - spans both rows */}
@@ -265,39 +536,68 @@ export default function PracticePage() {
         {/* Quiz Card - Relative for overlay */}
         {session.currentQuiz && (
           <div className="relative mb-4 md:mb-8">
-            <div
-              className="p-4 md:p-8 rounded-lg border-2"
-              style={{
-                borderColor: currentStatus ? getStatusColor(currentStatus) : 'var(--cyber-teal)',
-                backgroundColor: 'rgba(146, 228, 221, 0.05)',
-              }}
-            >
-              <div className="mb-2 md:mb-4">
-                {currentStatus && (
-                  <span
-                    className="inline-block px-2 md:px-3 py-1 rounded text-xs md:text-sm font-semibold mb-2"
-                    style={{
-                      backgroundColor: getStatusColor(currentStatus),
-                      color: 'var(--cyber-dark)',
-                    }}
-                  >
-                    {currentStatus}
-                  </span>
-                )}
-              </div>
-              <h2 className="text-xl md:text-3xl font-bold mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>
-                {session.currentQuiz.question}
-              </h2>
-              <div className="text-xs md:text-sm opacity-70">
-                Success: <span className="text-lg md:text-2xl font-bold">{(successRate * 100).toFixed(0)}%</span> | Trials: <span className="text-lg md:text-2xl font-bold">{session.currentQuiz.numTrials}</span>
-              </div>
-            </div>
+            {(() => {
+              const displayQuiz = session.currentQuiz;
+              const displayStatus = displayQuiz
+                ? getQuizStatus(displayQuiz.numTrials, displayQuiz.numSuccess, config)
+                : null;
+              const displaySuccessRate = displayQuiz
+                ? displayQuiz.numTrials === 0
+                  ? 0
+                  : displayQuiz.numSuccess / displayQuiz.numTrials
+                : 0;
+              
+              return (
+                <div
+                  className="p-4 md:p-8 rounded-lg border-2"
+                  style={{
+                    borderColor: displayStatus ? getStatusColor(displayStatus) : 'var(--cyber-teal)',
+                    backgroundColor: 'rgba(146, 228, 221, 0.05)',
+                  }}
+                >
+                  <div className="mb-2 md:mb-4">
+                    {displayStatus && (
+                      <span
+                        className="inline-block px-2 md:px-3 py-1 rounded text-xs md:text-sm font-semibold mb-2"
+                        style={{
+                          backgroundColor: getStatusColor(displayStatus),
+                          color: 'var(--cyber-dark)',
+                        }}
+                      >
+                        {displayStatus}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between mb-3 md:mb-4">
+                    <h2 className="text-xl md:text-3xl font-bold flex-1" style={{ color: 'var(--cyber-gold)' }}>
+                      {displayQuiz?.question}
+                    </h2>
+                    {timeLimitSeconds !== null && timeRemaining !== null && !answering && !lastResult && (
+                      <div
+                        className="ml-4 px-3 md:px-4 py-1 md:py-2 rounded text-lg md:text-2xl font-bold"
+                        style={{
+                          backgroundColor: timeRemaining <= 2 ? 'var(--card-red)' : 'var(--cyber-teal)',
+                          color: 'var(--cyber-dark)',
+                          minWidth: '60px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {timeRemaining}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-xs md:text-sm opacity-70">
+                    Success: <span className="text-lg md:text-2xl font-bold">{(displaySuccessRate * 100).toFixed(0)}%</span> | Trials: <span className="text-lg md:text-2xl font-bold">{displayQuiz?.numTrials || 0}</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Answer Feedback - Overlay positioned absolutely */}
             {lastResult && (
               <div
                 className={`absolute top-0 left-0 right-0 z-10 p-3 md:p-4 rounded text-center mx-3 md:mx-6 ${
-                  lastResult.correct ? 'animate-pulse' : 'animate-bounce'
+                  lastResult.correct ? 'animate-pulse' : ''
                 }`}
                 style={{
                   backgroundColor: lastResult.correct ? 'var(--card-green)' : 'var(--card-red)',
@@ -309,22 +609,36 @@ export default function PracticePage() {
                   <p className="font-bold text-sm md:text-base">✓ Correct!</p>
                 ) : (
                   <>
-                    <p className="font-bold text-sm md:text-base">✗ Incorrect</p>
+                    <p className="font-bold text-sm md:text-base">
+                      {lastResult.userAnswer === '' ? '⏱ Time\'s Up!' : '✗ Incorrect'}
+                    </p>
                     <p className="text-xs md:text-sm mt-1 md:mt-2">Correct: {lastResult.acceptedAnswers.join(', ')}</p>
                   </>
                 )}
                 {lastResult.statusChanged && (
                   <p className="text-xs md:text-sm mt-1 md:mt-2 font-bold">Status changed! 🎉</p>
                 )}
+                <div className="mt-2">
+                  <button
+                    onClick={handleNext}
+                    className="px-4 py-2 rounded font-bold"
+                    style={{
+                      backgroundColor: 'var(--cyber-teal)',
+                      color: 'var(--cyber-dark)',
+                    }}
+                  >
+                    Next →
+                  </button>
+                </div>
               </div>
             )}
           </div>
         )}
 
         {/* Choices */}
-        {(choicesForFeedback || session.choices) && (choicesForFeedback || session.choices)!.length > 0 ? (
+        {session.choices && session.choices.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 pb-4">
-              {(choicesForFeedback || session.choices)!.map((choice, idx) => {
+              {session.choices.map((choice, idx) => {
             const isCorrect = lastResult?.correct && choice.answer === lastResult.userAnswer;
             const isWrong = !lastResult?.correct && choice.answer === lastResult?.userAnswer;
             const isAccepted = lastResult?.acceptedAnswers.includes(choice.answer);

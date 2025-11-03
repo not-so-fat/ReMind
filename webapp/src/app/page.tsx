@@ -29,10 +29,27 @@ export default function Home() {
   async function fetchTargets() {
     try {
       const res = await fetch('/api/targets');
-      const data = await res.json();
-      setTargets(data.targets || []);
+      if (!res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const err = await res.json();
+          console.error('Error fetching targets:', err);
+        } else {
+          const txt = await res.text();
+          console.error('Error fetching targets (non-JSON):', txt.slice(0, 300));
+        }
+        setTargets([]);
+        return;
+      }
+      const data = await res.json().catch(async () => {
+        const txt = await res.text();
+        console.error('Non-JSON response for /api/targets:', txt.slice(0, 300));
+        return { targets: [] };
+      });
+      setTargets(Array.isArray(data.targets) ? data.targets : []);
     } catch (error) {
       console.error('Error fetching targets:', error);
+      setTargets([]);
     } finally {
       setLoading(false);
     }
@@ -71,8 +88,14 @@ export default function Home() {
       });
 
       if (!createRes.ok) {
-        const error = await createRes.json();
-        alert(`Error: ${error.error || 'Failed to create target'}`);
+        const ct = createRes.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const error = await createRes.json();
+          alert(`Error: ${error.error || 'Failed to create target'}`);
+        } else {
+          const txt = await createRes.text();
+          alert(`Error: Failed to create target\n${txt.slice(0, 300)}`);
+        }
         return;
       }
 
@@ -90,10 +113,20 @@ export default function Home() {
         });
 
         if (!importRes.ok) {
-          const error = await importRes.json();
-          alert(`Target created but import failed: ${error.error || 'Failed to import CSV'}`);
+          const ct = importRes.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            const error = await importRes.json().catch(() => ({}));
+            alert(`Target created but import failed: ${error.error || 'Failed to import CSV'}`);
+          } else {
+            const txt = await importRes.text();
+            alert(`Target created but import failed: ${txt.slice(0, 300)}`);
+          }
         } else {
-          const data = await importRes.json();
+          const data = await importRes.json().catch(async () => {
+            const txt = await importRes.text();
+            console.error('Non-JSON response for import:', txt.slice(0, 300));
+            return { imported: 0 };
+          });
           let message = `Target created! Imported ${data.imported} quiz${data.imported !== 1 ? 'zes' : ''}`;
           if (data.totalRows !== undefined) {
             message += `\n\nFile statistics:\n- Total rows in file: ${data.totalRows}`;

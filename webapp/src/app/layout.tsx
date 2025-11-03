@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "ReMind - Repeat to Remind",
   description: "Helps you remember things through repetitive quiz training",
+  icons: {
+    icon: '/remind-logo.svg',
+  },
 };
 
 export const viewport: Viewport = {
