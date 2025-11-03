@@ -9,19 +9,47 @@
 pnpm install
 ```
 
-2. Set up environment variables:
+2. Set up PostgreSQL database:
+
+**Option A: Using Homebrew (Recommended)**
 ```bash
-echo 'DATABASE_URL="file:./prisma/dev.db"' > .env.local
+# Install PostgreSQL (if not already installed)
+brew install postgresql@16
+brew services start postgresql@16
+
+# Create database (use full path if createdb not in PATH)
+/opt/homebrew/opt/postgresql@16/bin/createdb remind_dev
+
+# Or add PostgreSQL to PATH for easier use:
+# echo 'export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"' >> ~/.zshrc
+# source ~/.zshrc
+# createdb remind_dev
 ```
 
-3. Generate Prisma client and run migrations:
+**Option B: Using Docker**
 ```bash
-export DATABASE_URL="file:./prisma/dev.db"
+docker run --name remind-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=remind_dev -p 5432:5432 -d postgres:16
+```
+
+3. Set up environment variables:
+```bash
+# Get your PostgreSQL username
+USERNAME=$(whoami)
+
+# For local PostgreSQL (with your username)
+echo "DATABASE_URL=\"postgresql://${USERNAME}@localhost:5432/remind_dev\"" > .env.local
+
+# Or if using Docker with password:
+# echo 'DATABASE_URL="postgresql://postgres:postgres@localhost:5432/remind_dev"' > .env.local
+```
+
+4. Generate Prisma client and run migrations:
+```bash
 pnpm db:generate
-pnpm db:migrate
+pnpm db:migrate:deploy
 ```
 
-4. Start development server:
+5. Start development server:
 ```bash
 pnpm dev
 ```
@@ -32,9 +60,11 @@ See `WINDOWS_SETUP.md` in the project root for detailed Windows setup instructio
 
 Quick setup:
 1. Install Node.js (20+) and pnpm: `npm install -g pnpm`
-2. Create `.env.local` with: `DATABASE_URL="file:./prisma/dev.db"`
-3. Run: `pnpm install && pnpm db:generate && pnpm db:migrate`
-4. Start: `pnpm dev`
+2. Install PostgreSQL (see WINDOWS_SETUP.md for details)
+3. Create database: `createdb remind_dev` (or use pgAdmin)
+4. Create `.env.local` with: `DATABASE_URL="postgresql://localhost:5432/remind_dev"`
+5. Run: `pnpm install && pnpm db:generate && pnpm db:migrate:deploy`
+6. Start: `pnpm dev`
 
 ### Ubuntu/Linux
 
@@ -43,9 +73,11 @@ See `UBUNTU_SETUP.md` in the project root for detailed Ubuntu/Linux setup instru
 Quick setup:
 1. Install Node.js (20+) using NodeSource repository or nvm
 2. Install pnpm: `npm install -g pnpm`
-3. Create `.env.local` with: `DATABASE_URL="file:./prisma/dev.db"`
-4. Run: `pnpm install && pnpm db:generate && pnpm db:migrate`
-5. Start: `pnpm dev`
+3. Install PostgreSQL: `sudo apt install postgresql postgresql-contrib`
+4. Create database: `sudo -u postgres createdb remind_dev`
+5. Create `.env.local` with: `DATABASE_URL="postgresql://localhost:5432/remind_dev"`
+6. Run: `pnpm install && pnpm db:generate && pnpm db:migrate:deploy`
+7. Start: `pnpm dev`
 
 The app will be available at:
 - **Local access**: http://localhost:3000

@@ -211,57 +211,63 @@ export default function PracticePage() {
     : 0;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--cyber-dark)', color: 'var(--cyber-teal)' }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ backgroundColor: 'var(--cyber-dark)', color: 'var(--cyber-teal)' }}>
       {/* Header */}
       <header className="border-b-2" style={{ borderColor: 'var(--cyber-teal)' }}>
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-lg hover:underline"
-            style={{ color: 'var(--cyber-gold)' }}
-          >
-            ← Back
-          </Link>
-          <div className="text-center flex-1">
-            <h1 className="text-xl font-bold" style={{ color: 'var(--cyber-gold)' }}>
+        <div className="max-w-4xl mx-auto px-3 md:px-6 py-2 md:py-4">
+          {/* Top row: Navigation and title */}
+          <div className="flex items-center justify-between mb-2">
+            <Link
+              href="/"
+              className="text-base md:text-lg hover:underline flex-shrink-0"
+              style={{ color: 'var(--cyber-gold)' }}
+            >
+              ← Back
+            </Link>
+            <h1 className="text-base md:text-xl font-bold text-center flex-1 px-2" style={{ color: 'var(--cyber-gold)' }}>
               {target.name}
             </h1>
-            {stats && (
-              <p className="text-sm opacity-70">
-                <span className="text-2xl font-bold">{stats.totalQuizzes}</span> quizzes | New: <span className="text-2xl font-bold">{stats.categoryCounts.New}</span> | Wandering: <span className="text-2xl font-bold">{stats.categoryCounts.Wandering}</span> | Confident: <span className="text-2xl font-bold">{stats.categoryCounts.Confident}</span>
-              </p>
-            )}
+            <Link
+              href={`/targets/${targetId}/review`}
+              className="text-base md:text-lg hover:underline flex-shrink-0"
+              style={{ color: 'var(--cyber-gold)' }}
+            >
+              Review →
+            </Link>
           </div>
-          <Link
-            href={`/targets/${targetId}/review`}
-            className="text-lg hover:underline"
-            style={{ color: 'var(--cyber-gold)' }}
-          >
-            Review →
-          </Link>
+          {/* Stats row: Compact on mobile */}
+          {stats && (
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs md:text-sm opacity-70">
+              <span><span className="text-base md:text-2xl font-bold">{stats.totalQuizzes}</span> total</span>
+              <span className="hidden sm:inline">|</span>
+              <span>N: <span className="text-base md:text-2xl font-bold">{stats.categoryCounts.New}</span></span>
+              <span>W: <span className="text-base md:text-2xl font-bold">{stats.categoryCounts.Wandering}</span></span>
+              <span>C: <span className="text-base md:text-2xl font-bold">{stats.categoryCounts.Confident}</span></span>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-4xl mx-auto px-3 md:px-6 py-4 md:py-8 pb-6">
         {/* Today's Trials */}
-        <div className="mb-8 text-center">
-          <p className="text-lg opacity-80">Trials done today: <span className="text-4xl font-bold">{todayTrials}</span></p>
+        <div className="mb-4 md:mb-8 text-center">
+          <p className="text-sm md:text-lg opacity-80">Trials today: <span className="text-2xl md:text-4xl font-bold">{todayTrials}</span></p>
         </div>
 
         {/* Quiz Card */}
         {session.currentQuiz && (
           <div
-            className="mb-8 p-8 rounded-lg border-2"
+            className="mb-4 md:mb-8 p-4 md:p-8 rounded-lg border-2"
             style={{
               borderColor: currentStatus ? getStatusColor(currentStatus) : 'var(--cyber-teal)',
               backgroundColor: 'rgba(146, 228, 221, 0.05)',
             }}
           >
-            <div className="mb-4">
+            <div className="mb-2 md:mb-4">
               {currentStatus && (
                 <span
-                  className="inline-block px-3 py-1 rounded text-sm font-semibold mb-2"
+                  className="inline-block px-2 md:px-3 py-1 rounded text-xs md:text-sm font-semibold mb-2"
                   style={{
                     backgroundColor: getStatusColor(currentStatus),
                     color: 'var(--cyber-dark)',
@@ -271,20 +277,20 @@ export default function PracticePage() {
                 </span>
               )}
             </div>
-            <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--cyber-gold)' }}>
+            <h2 className="text-xl md:text-3xl font-bold mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>
               {session.currentQuiz.question}
             </h2>
-            <div className="text-sm opacity-70">
-              Success rate: <span className="text-2xl font-bold">{(successRate * 100).toFixed(0)}%</span> | Trials: <span className="text-2xl font-bold">{session.currentQuiz.numTrials}</span>
+            <div className="text-xs md:text-sm opacity-70">
+              Success: <span className="text-lg md:text-2xl font-bold">{(successRate * 100).toFixed(0)}%</span> | Trials: <span className="text-lg md:text-2xl font-bold">{session.currentQuiz.numTrials}</span>
             </div>
           </div>
         )}
 
         {/* Answer Feedback - Fixed height container to prevent layout shift */}
-        <div className="mb-8" style={{ minHeight: '80px' }}>
+        <div className="mb-4 md:mb-8" style={{ minHeight: '60px', maxHeight: '120px', overflowY: 'auto' }}>
           {lastResult && (
             <div
-              className={`p-4 rounded text-center ${
+              className={`p-3 md:p-4 rounded text-center ${
                 lastResult.correct ? 'animate-pulse' : 'animate-bounce'
               }`}
               style={{
@@ -293,15 +299,15 @@ export default function PracticePage() {
               }}
             >
               {lastResult.correct ? (
-                <p className="font-bold">✓ Correct!</p>
+                <p className="font-bold text-sm md:text-base">✓ Correct!</p>
               ) : (
                 <>
-                  <p className="font-bold">✗ Incorrect</p>
-                  <p className="text-sm mt-2">Correct answer(s): {lastResult.acceptedAnswers.join(', ')}</p>
+                  <p className="font-bold text-sm md:text-base">✗ Incorrect</p>
+                  <p className="text-xs md:text-sm mt-1 md:mt-2">Correct: {lastResult.acceptedAnswers.join(', ')}</p>
                 </>
               )}
               {lastResult.statusChanged && (
-                <p className="text-sm mt-2 font-bold">Status changed! 🎉</p>
+                <p className="text-xs md:text-sm mt-1 md:mt-2 font-bold">Status changed! 🎉</p>
               )}
             </div>
           )}
@@ -309,7 +315,7 @@ export default function PracticePage() {
 
         {/* Choices */}
         {(choicesForFeedback || session.choices) && (choicesForFeedback || session.choices)!.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 pb-4">
               {(choicesForFeedback || session.choices)!.map((choice, idx) => {
             const isCorrect = lastResult?.correct && choice.answer === lastResult.userAnswer;
             const isWrong = !lastResult?.correct && choice.answer === lastResult?.userAnswer;
@@ -320,7 +326,7 @@ export default function PracticePage() {
                 key={idx}
                 onClick={() => handleAnswer(choice.answer)}
                 disabled={answering || !!lastResult}
-                className="p-6 rounded-lg border-2 text-left transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed relative"
+                className="p-4 md:p-6 rounded-lg border-2 text-left transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed relative text-sm md:text-base min-h-[60px] md:min-h-[80px] flex items-center"
                 style={{
                   borderColor:
                     isCorrect || isAccepted

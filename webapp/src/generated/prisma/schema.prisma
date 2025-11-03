@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Target {
+  id         String   @id @default(cuid())
+  name       String
+  configJson Json?
+  createdAt  DateTime @default(now())
+
+  quizzes Quiz[]
+}
+
+model Quiz {
+  id        String   @id @default(cuid())
+  targetId  String
+  target    Target   @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  question  String
+  answer    String
+  createdAt DateTime @default(now())
+
+  numTrials  Int @default(0)
+  numSuccess Int @default(0)
+
+  trials Trial[]
+
+  @@unique([targetId, question, answer])
+  @@index([targetId])
+  @@index([targetId, question])
+}
+
+model Trial {
+  id        String   @id @default(cuid())
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  success   Boolean
+
+  @@index([quizId, createdAt])
+}
