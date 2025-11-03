@@ -88,7 +88,7 @@ export default function SettingsPage() {
           <h1 className="text-base md:text-xl font-bold text-center flex-1 px-2" style={{ color: 'var(--cyber-gold)' }}>
             Settings - {target.name}
           </h1>
-          <div className="w-8 h-8 md:w-10 md:h-10"></div> {/* Spacer to balance logo */}
+          <div className="w-12 h-12 md:w-16 md:h-16"></div> {/* Spacer to balance logo */}
         </div>
       </header>
 

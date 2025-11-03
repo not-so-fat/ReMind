@@ -215,31 +215,43 @@ export default function PracticePage() {
     <div className="min-h-screen overflow-x-hidden" style={{ backgroundColor: 'var(--cyber-dark)', color: 'var(--cyber-teal)' }}>
       {/* Header */}
       <header className="border-b-2" style={{ borderColor: 'var(--cyber-teal)' }}>
-        <div className="max-w-4xl mx-auto px-3 md:px-6 py-2 md:py-4">
-          {/* Top row: Navigation and title */}
-          <div className="flex items-center justify-between mb-2">
-            <Logo href="/" />
-            <h1 className="text-base md:text-xl font-bold text-center flex-1 px-2" style={{ color: 'var(--cyber-gold)' }}>
-              {target.name}
-            </h1>
-            <Link
-              href={`/targets/${targetId}/review`}
-              className="text-base md:text-lg hover:underline flex-shrink-0"
-              style={{ color: 'var(--cyber-gold)' }}
-            >
-              Review →
-            </Link>
-          </div>
-          {/* Stats row: Compact on mobile */}
-          {stats && (
-            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs md:text-sm opacity-70">
-              <span><span className="text-base md:text-2xl font-bold">{stats.totalQuizzes}</span> total</span>
-              <span className="hidden sm:inline">|</span>
-              <span>N: <span className="text-base md:text-2xl font-bold">{stats.categoryCounts.New}</span></span>
-              <span>W: <span className="text-base md:text-2xl font-bold">{stats.categoryCounts.Wandering}</span></span>
-              <span>C: <span className="text-base md:text-2xl font-bold">{stats.categoryCounts.Confident}</span></span>
+        <div className="max-w-4xl mx-auto px-3 md:px-6">
+          <div className="grid grid-cols-[auto_1fr_auto] gap-x-2 md:gap-x-4 py-2 md:py-2.5">
+            {/* Logo - spans both rows */}
+            <div className="row-span-2 flex items-start pt-1">
+              <Logo href="/" />
             </div>
-          )}
+            {/* Top row: Title */}
+            <div className="flex items-center justify-center">
+              <h1 className="text-base md:text-xl font-bold text-center px-2" style={{ color: 'var(--cyber-gold)' }}>
+                {target.name}
+              </h1>
+            </div>
+            {/* Review button - spans both rows */}
+            <div className="row-span-2 flex items-center">
+              <Link
+                href={`/targets/${targetId}/review`}
+                className="text-base md:text-lg hover:underline flex-shrink-0"
+                style={{ color: 'var(--cyber-gold)' }}
+              >
+                Review →
+              </Link>
+            </div>
+            {/* Stats row */}
+            {stats ? (
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs md:text-sm opacity-70">
+                <span><span className="text-base md:text-2xl font-bold">{stats.totalQuizzes}</span> total</span>
+                <span className="hidden sm:inline">|</span>
+                <span>N: <span className="text-base md:text-2xl font-bold">{stats.categoryCounts.New}</span></span>
+                <span>W: <span className="text-base md:text-2xl font-bold">{stats.categoryCounts.Wandering}</span></span>
+                <span>C: <span className="text-base md:text-2xl font-bold">{stats.categoryCounts.Confident}</span></span>
+              </div>
+            ) : (
+              <div></div>
+            )}
+            {/* Empty cell for grid alignment */}
+            <div></div>
+          </div>
         </div>
       </header>
 

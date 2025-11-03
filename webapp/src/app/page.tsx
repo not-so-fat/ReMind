@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Logo from '@/components/Logo';
 
 interface Target {
   id: string;
@@ -106,11 +107,20 @@ export default function Home() {
   return (
     <div className="min-h-screen p-4 md:p-8 overflow-x-hidden" style={{ backgroundColor: 'var(--cyber-dark)', color: 'var(--cyber-teal)' }}>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl md:text-4xl font-bold mb-4 md:mb-8" style={{ color: 'var(--cyber-gold)' }}>
-          ReMind
-        </h1>
+        {/* Header with Logo */}
+        <div className="flex items-center gap-4 mb-4 md:mb-6">
+          <Logo href="/" />
+          <div>
+            <h1 className="text-2xl md:text-4xl font-bold" style={{ color: 'var(--cyber-gold)' }}>
+              ReMind
+            </h1>
+            <p className="text-xs md:text-sm opacity-70 mt-1">
+              Repeat to Remind
+            </p>
+          </div>
+        </div>
         <p className="text-sm md:text-lg mb-6 md:mb-8 opacity-80">
-          Repeat to Remind - Helps you remember things through repetitive quiz training
+          Helps you remember things through repetitive quiz training
         </p>
 
         {!showCreateForm ? (

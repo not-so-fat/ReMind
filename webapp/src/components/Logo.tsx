@@ -12,9 +12,9 @@ export default function Logo({ href = '/', className = '' }: LogoProps) {
       <Image
         src="/remind-logo.svg"
         alt="ReMind Logo"
-        width={40}
-        height={40}
-        className="w-8 h-8 md:w-10 md:h-10"
+        width={80}
+        height={80}
+        className="w-12 h-12 md:w-16 md:h-16"
         priority
       />
     </Link>
