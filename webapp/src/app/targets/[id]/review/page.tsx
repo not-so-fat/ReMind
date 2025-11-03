@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import type { StatusCategory } from '@/lib/engine/status';
+import Logo from '@/components/Logo';
 
 interface ReviewData {
   totalTrials: number;
@@ -106,13 +107,7 @@ export default function ReviewPage() {
       {/* Header */}
       <header className="border-b-2" style={{ borderColor: 'var(--cyber-teal)' }}>
         <div className="max-w-4xl mx-auto px-3 md:px-6 py-2 md:py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-base md:text-lg hover:underline flex-shrink-0"
-            style={{ color: 'var(--cyber-gold)' }}
-          >
-            ← Back
-          </Link>
+          <Logo href="/" />
           <div className="text-center flex-1 px-2">
             <h1 className="text-base md:text-xl font-bold" style={{ color: 'var(--cyber-gold)' }}>
               {target.name} - Review

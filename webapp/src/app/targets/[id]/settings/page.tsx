@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { TargetConfigSchema, DEFAULT_CONFIG, type TargetConfig } from '@/lib/validation/config';
+import Logo from '@/components/Logo';
 
 interface Target {
   id: string;
@@ -82,32 +83,26 @@ export default function SettingsPage() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cyber-dark)', color: 'var(--cyber-teal)' }}>
       {/* Header */}
       <header className="border-b-2" style={{ borderColor: 'var(--cyber-teal)' }}>
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href={`/targets/${targetId}/practice`}
-            className="text-lg hover:underline"
-            style={{ color: 'var(--cyber-gold)' }}
-          >
-            ← Back
-          </Link>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--cyber-gold)' }}>
+        <div className="max-w-4xl mx-auto px-3 md:px-6 py-2 md:py-4 flex items-center justify-between">
+          <Logo href={`/targets/${targetId}/practice`} />
+          <h1 className="text-base md:text-xl font-bold text-center flex-1 px-2" style={{ color: 'var(--cyber-gold)' }}>
             Settings - {target.name}
           </h1>
-          <div style={{ width: '80px' }}></div>
+          <div className="w-8 h-8 md:w-10 md:h-10"></div> {/* Spacer to balance logo */}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-4xl mx-auto px-3 md:px-6 py-4 md:py-8">
         <form onSubmit={handleSave}>
-          <div className="space-y-8">
+          <div className="space-y-4 md:space-y-8">
             {/* N: Minimum trials for status */}
-            <div className="p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+            <div className="p-4 md:p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
               <label className="block mb-2">
-                <span className="text-lg font-semibold" style={{ color: 'var(--cyber-gold)' }}>
+                <span className="text-base md:text-lg font-semibold" style={{ color: 'var(--cyber-gold)' }}>
                   N: Minimum Trials for Status
                 </span>
-                <p className="text-sm opacity-70 mt-1">
+                <p className="text-xs md:text-sm opacity-70 mt-1">
                   Number of trials required before a quiz can be categorized as Wandering or Confident
                 </p>
               </label>
@@ -118,7 +113,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setConfig({ ...config, minTrialsForStatus: parseInt(e.target.value) || 1 })
                 }
-                className="mt-2 w-full px-4 py-2 rounded"
+                className="mt-2 w-full px-3 md:px-4 py-2 rounded text-sm md:text-base"
                 style={{
                   backgroundColor: 'var(--cyber-dark)',
                   color: 'var(--cyber-teal)',
@@ -128,12 +123,12 @@ export default function SettingsPage() {
             </div>
 
             {/* M: Queue Size */}
-            <div className="p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+            <div className="p-4 md:p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
               <label className="block mb-2">
-                <span className="text-lg font-semibold" style={{ color: 'var(--cyber-gold)' }}>
+                <span className="text-base md:text-lg font-semibold" style={{ color: 'var(--cyber-gold)' }}>
                   M: Queue Size (Number of Choices)
                 </span>
-                <p className="text-sm opacity-70 mt-1">
+                <p className="text-xs md:text-sm opacity-70 mt-1">
                   Number of quizzes in the queue; also the number of answer choices shown
                 </p>
               </label>
@@ -144,7 +139,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setConfig({ ...config, queueSize: parseInt(e.target.value) || 1 })
                 }
-                className="mt-2 w-full px-4 py-2 rounded"
+                className="mt-2 w-full px-3 md:px-4 py-2 rounded text-sm md:text-base"
                 style={{
                   backgroundColor: 'var(--cyber-dark)',
                   color: 'var(--cyber-teal)',
@@ -154,12 +149,12 @@ export default function SettingsPage() {
             </div>
 
             {/* C: Cooldown Turns */}
-            <div className="p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+            <div className="p-4 md:p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
               <label className="block mb-2">
-                <span className="text-lg font-semibold" style={{ color: 'var(--cyber-gold)' }}>
+                <span className="text-base md:text-lg font-semibold" style={{ color: 'var(--cyber-gold)' }}>
                   C: Cooldown Turns
                 </span>
-                <p className="text-sm opacity-70 mt-1">
+                <p className="text-xs md:text-sm opacity-70 mt-1">
                   Number of turns before a quiz can appear again (session-scoped)
                 </p>
               </label>
@@ -170,7 +165,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setConfig({ ...config, cooldownTurns: parseInt(e.target.value) || 0 })
                 }
-                className="mt-2 w-full px-4 py-2 rounded"
+                className="mt-2 w-full px-3 md:px-4 py-2 rounded text-sm md:text-base"
                 style={{
                   backgroundColor: 'var(--cyber-dark)',
                   color: 'var(--cyber-teal)',
@@ -180,12 +175,12 @@ export default function SettingsPage() {
             </div>
 
             {/* Success Rate Threshold */}
-            <div className="p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+            <div className="p-4 md:p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
               <label className="block mb-2">
-                <span className="text-lg font-semibold" style={{ color: 'var(--cyber-gold)' }}>
+                <span className="text-base md:text-lg font-semibold" style={{ color: 'var(--cyber-gold)' }}>
                   Success Rate Threshold for Confident
                 </span>
-                <p className="text-sm opacity-70 mt-1">
+                <p className="text-xs md:text-sm opacity-70 mt-1">
                   Minimum success rate (0-1) required for a quiz to be categorized as Confident. Default: 0.8 (80%)
                 </p>
               </label>
@@ -198,7 +193,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setConfig({ ...config, successRateThreshold: parseFloat(e.target.value) || 0.8 })
                 }
-                className="mt-2 w-full px-4 py-2 rounded"
+                className="mt-2 w-full px-3 md:px-4 py-2 rounded text-sm md:text-base"
                 style={{
                   backgroundColor: 'var(--cyber-dark)',
                   color: 'var(--cyber-teal)',
@@ -208,18 +203,18 @@ export default function SettingsPage() {
             </div>
 
             {/* Category Weights */}
-            <div className="p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
-              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--cyber-gold)' }}>
+            <div className="p-4 md:p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+              <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>
                 Category Selection Weights
               </h3>
-              <p className="text-sm opacity-70 mb-4">
+              <p className="text-xs md:text-sm opacity-70 mb-3 md:mb-4">
                 Relative probability of selecting quizzes from each category (will be normalized)
               </p>
               
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 <div>
                   <label className="block mb-2">
-                    <span className="font-semibold">p_n: Weight for New</span>
+                    <span className="text-sm md:text-base font-semibold">p_n: Weight for New</span>
                   </label>
                   <input
                     type="number"
@@ -229,7 +224,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setConfig({ ...config, weightNew: parseFloat(e.target.value) || 0 })
                     }
-                    className="w-full px-4 py-2 rounded"
+                    className="w-full px-3 md:px-4 py-2 rounded text-sm md:text-base"
                     style={{
                       backgroundColor: 'var(--cyber-dark)',
                       color: 'var(--cyber-teal)',
@@ -240,7 +235,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label className="block mb-2">
-                    <span className="font-semibold">p_w: Weight for Wandering</span>
+                    <span className="text-sm md:text-base font-semibold">p_w: Weight for Wandering</span>
                   </label>
                   <input
                     type="number"
@@ -250,7 +245,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setConfig({ ...config, weightWandering: parseFloat(e.target.value) || 0 })
                     }
-                    className="w-full px-4 py-2 rounded"
+                    className="w-full px-3 md:px-4 py-2 rounded text-sm md:text-base"
                     style={{
                       backgroundColor: 'var(--cyber-dark)',
                       color: 'var(--cyber-teal)',
@@ -261,7 +256,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label className="block mb-2">
-                    <span className="font-semibold">p_c: Weight for Confident</span>
+                    <span className="text-sm md:text-base font-semibold">p_c: Weight for Confident</span>
                   </label>
                   <input
                     type="number"
@@ -271,7 +266,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setConfig({ ...config, weightConfident: parseFloat(e.target.value) || 0 })
                     }
-                    className="w-full px-4 py-2 rounded"
+                    className="w-full px-3 md:px-4 py-2 rounded text-sm md:text-base"
                     style={{
                       backgroundColor: 'var(--cyber-dark)',
                       color: 'var(--cyber-teal)',
@@ -283,11 +278,11 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-8 flex gap-4">
+          <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 md:gap-4">
             <button
               type="submit"
               disabled={saving}
-              className="px-8 py-3 rounded"
+              className="px-6 md:px-8 py-2 md:py-3 rounded text-sm md:text-base"
               style={{
                 backgroundColor: 'var(--cyber-teal)',
                 color: 'var(--cyber-dark)',
@@ -300,7 +295,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => router.push(`/targets/${targetId}/practice`)}
-              className="px-8 py-3 rounded border"
+              className="px-6 md:px-8 py-2 md:py-3 rounded border text-sm md:text-base"
               style={{
                 borderColor: 'var(--cyber-teal)',
                 color: 'var(--cyber-teal)',

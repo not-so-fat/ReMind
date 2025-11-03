@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { getQuizStatus } from '@/lib/engine/status';
 import type { StatusCategory } from '@/lib/engine/status';
 import { TargetConfigSchema, DEFAULT_CONFIG } from '@/lib/validation/config';
+import Logo from '@/components/Logo';
 
 interface SessionState {
   queue: string[];
@@ -217,13 +218,7 @@ export default function PracticePage() {
         <div className="max-w-4xl mx-auto px-3 md:px-6 py-2 md:py-4">
           {/* Top row: Navigation and title */}
           <div className="flex items-center justify-between mb-2">
-            <Link
-              href="/"
-              className="text-base md:text-lg hover:underline flex-shrink-0"
-              style={{ color: 'var(--cyber-gold)' }}
-            >
-              ← Back
-            </Link>
+            <Logo href="/" />
             <h1 className="text-base md:text-xl font-bold text-center flex-1 px-2" style={{ color: 'var(--cyber-gold)' }}>
               {target.name}
             </h1>
