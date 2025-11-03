@@ -255,63 +255,64 @@ export default function PracticePage() {
           <p className="text-sm md:text-lg opacity-80">Trials today: <span className="text-2xl md:text-4xl font-bold">{todayTrials}</span></p>
         </div>
 
-        {/* Quiz Card */}
+        {/* Quiz Card - Relative for overlay */}
         {session.currentQuiz && (
-          <div
-            className="mb-4 md:mb-8 p-4 md:p-8 rounded-lg border-2"
-            style={{
-              borderColor: currentStatus ? getStatusColor(currentStatus) : 'var(--cyber-teal)',
-              backgroundColor: 'rgba(146, 228, 221, 0.05)',
-            }}
-          >
-            <div className="mb-2 md:mb-4">
-              {currentStatus && (
-                <span
-                  className="inline-block px-2 md:px-3 py-1 rounded text-xs md:text-sm font-semibold mb-2"
-                  style={{
-                    backgroundColor: getStatusColor(currentStatus),
-                    color: 'var(--cyber-dark)',
-                  }}
-                >
-                  {currentStatus}
-                </span>
-              )}
-            </div>
-            <h2 className="text-xl md:text-3xl font-bold mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>
-              {session.currentQuiz.question}
-            </h2>
-            <div className="text-xs md:text-sm opacity-70">
-              Success: <span className="text-lg md:text-2xl font-bold">{(successRate * 100).toFixed(0)}%</span> | Trials: <span className="text-lg md:text-2xl font-bold">{session.currentQuiz.numTrials}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Answer Feedback - Fixed height container to prevent layout shift */}
-        <div className="mb-4 md:mb-8" style={{ minHeight: '60px', maxHeight: '120px', overflowY: 'auto' }}>
-          {lastResult && (
+          <div className="relative mb-4 md:mb-8">
             <div
-              className={`p-3 md:p-4 rounded text-center ${
-                lastResult.correct ? 'animate-pulse' : 'animate-bounce'
-              }`}
+              className="p-4 md:p-8 rounded-lg border-2"
               style={{
-                backgroundColor: lastResult.correct ? 'var(--card-green)' : 'var(--card-red)',
-                color: 'var(--cyber-dark)',
+                borderColor: currentStatus ? getStatusColor(currentStatus) : 'var(--cyber-teal)',
+                backgroundColor: 'rgba(146, 228, 221, 0.05)',
               }}
             >
-              {lastResult.correct ? (
-                <p className="font-bold text-sm md:text-base">✓ Correct!</p>
-              ) : (
-                <>
-                  <p className="font-bold text-sm md:text-base">✗ Incorrect</p>
-                  <p className="text-xs md:text-sm mt-1 md:mt-2">Correct: {lastResult.acceptedAnswers.join(', ')}</p>
-                </>
-              )}
-              {lastResult.statusChanged && (
-                <p className="text-xs md:text-sm mt-1 md:mt-2 font-bold">Status changed! 🎉</p>
-              )}
+              <div className="mb-2 md:mb-4">
+                {currentStatus && (
+                  <span
+                    className="inline-block px-2 md:px-3 py-1 rounded text-xs md:text-sm font-semibold mb-2"
+                    style={{
+                      backgroundColor: getStatusColor(currentStatus),
+                      color: 'var(--cyber-dark)',
+                    }}
+                  >
+                    {currentStatus}
+                  </span>
+                )}
+              </div>
+              <h2 className="text-xl md:text-3xl font-bold mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>
+                {session.currentQuiz.question}
+              </h2>
+              <div className="text-xs md:text-sm opacity-70">
+                Success: <span className="text-lg md:text-2xl font-bold">{(successRate * 100).toFixed(0)}%</span> | Trials: <span className="text-lg md:text-2xl font-bold">{session.currentQuiz.numTrials}</span>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Answer Feedback - Overlay positioned absolutely */}
+            {lastResult && (
+              <div
+                className={`absolute top-0 left-0 right-0 z-10 p-3 md:p-4 rounded text-center mx-3 md:mx-6 ${
+                  lastResult.correct ? 'animate-pulse' : 'animate-bounce'
+                }`}
+                style={{
+                  backgroundColor: lastResult.correct ? 'var(--card-green)' : 'var(--card-red)',
+                  color: 'var(--cyber-dark)',
+                  marginTop: '-1rem',
+                }}
+              >
+                {lastResult.correct ? (
+                  <p className="font-bold text-sm md:text-base">✓ Correct!</p>
+                ) : (
+                  <>
+                    <p className="font-bold text-sm md:text-base">✗ Incorrect</p>
+                    <p className="text-xs md:text-sm mt-1 md:mt-2">Correct: {lastResult.acceptedAnswers.join(', ')}</p>
+                  </>
+                )}
+                {lastResult.statusChanged && (
+                  <p className="text-xs md:text-sm mt-1 md:mt-2 font-bold">Status changed! 🎉</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Choices */}
         {(choicesForFeedback || session.choices) && (choicesForFeedback || session.choices)!.length > 0 ? (

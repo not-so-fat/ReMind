@@ -104,19 +104,19 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-8" style={{ backgroundColor: 'var(--cyber-dark)', color: 'var(--cyber-teal)' }}>
+    <div className="min-h-screen p-4 md:p-8 overflow-x-hidden" style={{ backgroundColor: 'var(--cyber-dark)', color: 'var(--cyber-teal)' }}>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8" style={{ color: 'var(--cyber-gold)' }}>
+        <h1 className="text-2xl md:text-4xl font-bold mb-4 md:mb-8" style={{ color: 'var(--cyber-gold)' }}>
           ReMind
         </h1>
-        <p className="text-lg mb-8 opacity-80">
+        <p className="text-sm md:text-lg mb-6 md:mb-8 opacity-80">
           Repeat to Remind - Helps you remember things through repetitive quiz training
         </p>
 
         {!showCreateForm ? (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="mb-8 px-6 py-3 rounded border-2"
+            className="mb-6 md:mb-8 px-4 md:px-6 py-2 md:py-3 rounded border-2 text-sm md:text-base"
             style={{
               borderColor: 'var(--cyber-teal)',
               color: 'var(--cyber-teal)',
@@ -134,8 +134,8 @@ export default function Home() {
             + Create New Target
           </button>
         ) : (
-          <form onSubmit={handleCreateTarget} className="mb-8 p-6 rounded border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
-            <h2 className="text-xl mb-4" style={{ color: 'var(--cyber-gold)' }}>Create New Target</h2>
+          <form onSubmit={handleCreateTarget} className="mb-6 md:mb-8 p-4 md:p-6 rounded border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+            <h2 className="text-lg md:text-xl mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>Create New Target</h2>
             <input
               type="text"
               value={newTargetName}
@@ -203,21 +203,21 @@ export default function Home() {
           </form>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {targets.map((target) => (
             <Link
               key={target.id}
               href={`/targets/${target.id}/practice`}
-              className="p-6 rounded border-2 block transition-all hover:scale-105"
+              className="p-4 md:p-6 rounded border-2 block transition-all hover:scale-105"
               style={{
                 borderColor: 'var(--cyber-teal)',
                 backgroundColor: 'rgba(146, 228, 221, 0.05)',
               }}
             >
-              <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--cyber-gold)' }}>
+              <h3 className="text-base md:text-xl font-semibold mb-2" style={{ color: 'var(--cyber-gold)' }}>
                 {target.name}
               </h3>
-              <p className="text-sm opacity-70">
+              <p className="text-xs md:text-sm opacity-70">
                 {target._count.quizzes} quiz{target._count.quizzes !== 1 ? 'zes' : ''}
               </p>
             </Link>

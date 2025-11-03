@@ -105,22 +105,22 @@ export default function ReviewPage() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cyber-dark)', color: 'var(--cyber-teal)' }}>
       {/* Header */}
       <header className="border-b-2" style={{ borderColor: 'var(--cyber-teal)' }}>
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-3 md:px-6 py-2 md:py-4 flex items-center justify-between">
           <Link
             href="/"
-            className="text-lg hover:underline"
+            className="text-base md:text-lg hover:underline flex-shrink-0"
             style={{ color: 'var(--cyber-gold)' }}
           >
             ← Back
           </Link>
-          <div className="text-center flex-1">
-            <h1 className="text-xl font-bold" style={{ color: 'var(--cyber-gold)' }}>
+          <div className="text-center flex-1 px-2">
+            <h1 className="text-base md:text-xl font-bold" style={{ color: 'var(--cyber-gold)' }}>
               {target.name} - Review
             </h1>
           </div>
           <Link
             href={`/targets/${targetId}/practice`}
-            className="text-lg hover:underline"
+            className="text-base md:text-lg hover:underline flex-shrink-0"
             style={{ color: 'var(--cyber-gold)' }}
           >
             Practice →
@@ -129,12 +129,12 @@ export default function ReviewPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-4xl mx-auto px-3 md:px-6 py-4 md:py-8">
         {/* Settings Button - Top Right */}
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-end mb-4 md:mb-6">
           <Link
             href={`/targets/${targetId}/settings`}
-            className="px-4 py-2 rounded border-2 inline-block transition-all hover:scale-105"
+            className="px-3 md:px-4 py-1.5 md:py-2 rounded border-2 inline-block transition-all hover:scale-105 text-sm md:text-base"
             style={{
               borderColor: 'var(--cyber-teal)',
               color: 'var(--cyber-teal)',
@@ -154,50 +154,50 @@ export default function ReviewPage() {
         </div>
 
         {/* Cumulative Trials */}
-        <div className="mb-8 p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
-          <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--cyber-gold)' }}>
+        <div className="mb-6 md:mb-8 p-4 md:p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+          <h2 className="text-lg md:text-2xl font-bold mb-2" style={{ color: 'var(--cyber-gold)' }}>
             Cumulative Trials
           </h2>
-          <p className="text-4xl font-bold">{reviewData.totalTrials}</p>
+          <p className="text-2xl md:text-4xl font-bold">{reviewData.totalTrials}</p>
         </div>
 
         {/* Category Sizes */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--cyber-gold)' }}>
+        <div className="mb-6 md:mb-8">
+          <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>
             Category Sizes
           </h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 md:gap-4">
             <div
-              className="p-4 rounded-lg border-2 text-center"
+              className="p-3 md:p-4 rounded-lg border-2 text-center"
               style={{ borderColor: 'var(--card-gray)' }}
             >
-              <div className="text-sm opacity-70 mb-1">New</div>
-              <div className="text-2xl font-bold">{reviewData.categoryCounts.New}</div>
+              <div className="text-xs md:text-sm opacity-70 mb-1">New</div>
+              <div className="text-xl md:text-2xl font-bold">{reviewData.categoryCounts.New}</div>
             </div>
             <div
-              className="p-4 rounded-lg border-2 text-center"
+              className="p-3 md:p-4 rounded-lg border-2 text-center"
               style={{ borderColor: 'var(--card-red)' }}
             >
-              <div className="text-sm opacity-70 mb-1">Wandering</div>
-              <div className="text-2xl font-bold">{reviewData.categoryCounts.Wandering}</div>
+              <div className="text-xs md:text-sm opacity-70 mb-1">Wandering</div>
+              <div className="text-xl md:text-2xl font-bold">{reviewData.categoryCounts.Wandering}</div>
             </div>
             <div
-              className="p-4 rounded-lg border-2 text-center"
+              className="p-3 md:p-4 rounded-lg border-2 text-center"
               style={{ borderColor: 'var(--card-green)' }}
             >
-              <div className="text-sm opacity-70 mb-1">Confident</div>
-              <div className="text-2xl font-bold">{reviewData.categoryCounts.Confident}</div>
+              <div className="text-xs md:text-sm opacity-70 mb-1">Confident</div>
+              <div className="text-xl md:text-2xl font-bold">{reviewData.categoryCounts.Confident}</div>
             </div>
           </div>
         </div>
 
         {/* Daily Completion Chart */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--cyber-gold)' }}>
+        <div className="mb-6 md:mb-8">
+          <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>
             Recent Daily Completion (Last 7 Days)
           </h2>
-          <div className="p-6 rounded-lg border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
-            <div className="flex items-end justify-between gap-2 h-48">
+          <div className="p-3 md:p-6 rounded-lg border-2 overflow-x-auto" style={{ borderColor: 'var(--cyber-teal)' }}>
+            <div className="flex items-end justify-between gap-1 md:gap-2 h-32 md:h-48 min-w-[280px]">
               {reviewData.dailyData.map((day, idx) => (
                 <div key={idx} className="flex-1 flex flex-col items-center">
                   <div
@@ -208,7 +208,7 @@ export default function ReviewPage() {
                       minHeight: day.count > 0 ? '4px' : '0',
                     }}
                   />
-                  <div className="text-xs mt-2 opacity-70 text-center">
+                  <div className="text-xs mt-1 md:mt-2 opacity-70 text-center whitespace-nowrap">
                     {new Date(day.date).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -222,11 +222,11 @@ export default function ReviewPage() {
         </div>
 
         {/* Import More Quizzes */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           {!showImport ? (
             <button
               onClick={() => setShowImport(true)}
-              className="px-6 py-3 rounded border-2"
+              className="px-4 md:px-6 py-2 md:py-3 rounded border-2 text-sm md:text-base"
               style={{
                 borderColor: 'var(--cyber-teal)',
                 color: 'var(--cyber-teal)',
@@ -244,8 +244,8 @@ export default function ReviewPage() {
               Import More Quizzes (CSV)
             </button>
           ) : (
-            <form onSubmit={handleImport} className="p-6 rounded border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
-              <h3 className="text-xl mb-4" style={{ color: 'var(--cyber-gold)' }}>
+            <form onSubmit={handleImport} className="p-4 md:p-6 rounded border-2" style={{ borderColor: 'var(--cyber-teal)' }}>
+              <h3 className="text-lg md:text-xl mb-3 md:mb-4" style={{ color: 'var(--cyber-gold)' }}>
                 Import CSV
               </h3>
               <input
