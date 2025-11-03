@@ -1,0 +1,7 @@
+{
+  "buildCommand": "pnpm install && pnpm db:generate && pnpm build",
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "outputDirectory": ".next"
+}
+

@@ -5,15 +5,17 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "dev:local": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
